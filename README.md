@@ -25,7 +25,7 @@ This same component using in a TypeScript File with Vue Literal Compiler would l
 Syntax highligting in string literals is achieved with a vscode extension lit-html.
 
 
-## TypeSafe Functional Templates
+## Type Safe Functional Templates
 Inspired by Polymer, functional templates give you the ability to write typesafe templates.\
 Example:\
 \
@@ -57,7 +57,8 @@ So in ts-loader config\
 ![alt text](./images/4-3.png)
 
 ## Custom Blocks
-Vue also give you the ability to define Custom Blocks in your .vue files. To use custom blocks with Vue Literal Compiler, we simply do the following:\
+Vue also give you the ability to define Custom Blocks in your .vue files.\
+To use custom blocks with Vue Literal Compiler, we simply do the following:\
 \
 ![alt text](./images/5-1.png)
 
