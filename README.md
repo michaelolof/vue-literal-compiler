@@ -27,9 +27,10 @@ Syntax highligting in string literals is achieved with a vscode extension lit-ht
 
 ## TypeSafe Functional Templates
 Inspired by Polymer, functional templates give you the ability to write typesafe templates.\
-Example:
-![alt text](./images/3-1.png)
-
+Example:\
+\
+![alt text](./images/3-1.png)\
+\
 Now you can easily auto refractor name and sayHi.
 
 ## How To Use
