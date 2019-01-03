@@ -14,9 +14,10 @@ A simple stand in replacement for the default vue-template-compiler that allows 
 If you're like me and you love developing in TypeScript and you want to get the best TypeScript experience from Vue, then this library is for you.
 
 ## Example
-Below is a normal .vue Single File Component.
+Below is a normal .vue Single File Component.\
+\
+\
 ![alt text](./images/1-1.png)
-![alt text](./images/1-2.png)
 
 This same component using in a TypeScript File with Vue Literal Compiler would look like this.\
 \
