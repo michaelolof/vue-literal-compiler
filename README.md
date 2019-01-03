@@ -16,11 +16,11 @@ If you're like me and you love developing in TypeScript and you want to get the 
 ## Example
 Below is a normal .vue Single File Component.\
 \
-![alt text](./images/1-1.png)
+![alt text](https://github.com/michaelolof/vue-literal-compiler/blob/master/images/1-1.png?raw=true)
 
 This same component using in a TypeScript File with Vue Literal Compiler would look like this.\
 \
-![alt text](./images/2-1.png)\
+![alt text](https://github.com/michaelolof/vue-literal-compiler/blob/master/images/2-1.png?raw=true)\
 \
 Syntax highligting in string literals is achieved with a vscode extension lit-html.
 
@@ -29,7 +29,7 @@ Syntax highligting in string literals is achieved with a vscode extension lit-ht
 Inspired by Polymer, functional templates give you the ability to write typesafe templates.\
 Example:\
 \
-![alt text](./images/3-1.png)\
+![alt text](https://github.com/michaelolof/vue-literal-compiler/blob/master/images/3-1.png?raw=true)\
 \
 Now you can easily auto refractor name and sayHi.
 
@@ -42,27 +42,27 @@ Install Vue Literal Compiler
 \
 Include it in your webpack.config.js vue-loader options.\
 \
-![alt text](./images/4-1.png)\
+![alt text](https://github.com/michaelolof/vue-literal-compiler/blob/master/images/4-1.png?raw=true)\
 \
 Add an additional Vue Loader Configuration. 
 This is to appease VueLoaderPlugin and prevent it from squawking. 
 
 See issue https://github.com/vuejs/vue-loader/issues/1238 \
 \
-![alt text](./images/4-2.png) \
+![alt text](https://github.com/michaelolof/vue-literal-compiler/blob/master/images/4-2.png?raw=true) \
 \
 Finally since we're using plain TypeScript / JavaScript files rather than .vue files, We have to stop ts-loader or babel from attempting to parse our .vue.ts or .vue.js files. We do this by telling webpack to exclude those files.\
 So in ts-loader config\
 \
-![alt text](./images/4-3.png)
+![alt text](https://github.com/michaelolof/vue-literal-compiler/blob/master/images/4-3.png?raw=true)
 
 ## Custom Blocks
 Vue also give you the ability to define Custom Blocks in your .vue files.\
 To use custom blocks with Vue Literal Compiler, we simply do the following:\
 \
-![alt text](./images/5-1.png)
+![alt text](https://github.com/michaelolof/vue-literal-compiler/blob/master/images/5-1.png?raw=true)
 
 ## Multiple Styles
 Just like in your .vue files where you can include multiple style tags, it is possible in .vue.ts files like so: \
 \
-![alt text](./images/6-1.png)
+![alt text](https://github.com/michaelolof/vue-literal-compiler/blob/master/images/6-1.png?raw=true)
