@@ -1,0 +1,7 @@
+test/
+.*
+images
+src
+test
+tsconfig.json
+.gitignore

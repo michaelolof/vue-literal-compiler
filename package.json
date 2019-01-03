@@ -1,0 +1,34 @@
+{
+  "name": "vue-literal-compiler",
+  "version": "1.0.24",
+  "description": "Compile Vue Template Literals into Render Functions at build time.",
+  "main": "dist/index.js",
+  "scripts": {
+    "test": "mocha -r ts-node/register test/**/*.test.ts --reporter=min --watch --watch-extensions ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/michaelolof"
+  },
+  "author": "michaelolof",
+  "license": "ISC",
+  "dependencies": {
+    "hyntax": "^1.0.7",
+    "vue-template-compiler": "^2.5.21"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.1.7",
+    "@types/mocha": "^5.2.5",
+    "@types/node": "^10.12.18",
+    "@types/webpack": "^4.4.22",
+    "@vue/component-compiler-utils": "^2.3.1",
+    "chai": "^4.2.0",
+    "mocha": "^5.2.0",
+    "ts-node": "^7.0.1",
+    "typescript": "^3.2.2",
+    "webpack": "^4.28.3"
+  },
+  "peerDependencies": {
+    "webpack": "^4.1.0"
+  }
+}
