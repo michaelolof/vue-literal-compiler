@@ -13,6 +13,10 @@ A simple stand in replacement for the default vue-template-compiler that allows 
 ## Who This Library is For
 If you're like me and you love developing in TypeScript and you want to get the best TypeScript experience from Vue, then this library is for you.
 
+## Samples
+You can find a working example here
+* Vue Literal Compiler Sample https://github.com/michaelolof/vue-literal-compiler-sample
+
 ## Example
 Below is a normal .vue Single File Component.\
 \
