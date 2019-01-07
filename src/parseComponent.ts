@@ -92,7 +92,7 @@ function normalizeCustomBlocks(customBlocksDeclartion:Match[]) {
 }
 
 function normalizeTemplate(templateMarkup:string, start:number, end:number, isScoped:true|undefined):SFCBlock|null {
-  const { content, attrs } = removeTemplateTagIfAny( templateMarkup );
+  const { content, attrs } = removeWrappingTemplateTagsIfAny( templateMarkup, start, end );
   return {
     type: "template",
     attrs,
@@ -106,25 +106,50 @@ function normalizeTemplate(templateMarkup:string, start:number, end:number, isSc
     src: undefined,
   };
 
+  function removeWrappingTemplateTagsIfAny( templateMarkup:string, start:number, end:number ) {
+    const attrs:Record<any, any> = {}
+    templateMarkup = templateMarkup.trim();
+    if( templateMarkup.length === 0 ) return { content: "", attrs }
+    const firstTagRegexp = /<((.|\n)*?):?>/;
+    const firstTagRegexpArr = templateMarkup.match( firstTagRegexp );
+    if( firstTagRegexpArr === null ) {
+      // markup has no initail tag name.
+      throw new Error(
+        "\n<template> tag not found.\n" +
+        "Usage of template tag is only optional if you're writing html.\n" +
+        "Are you trying to use a different template lang like pug or jade?\n" +
+        "If so specify the template language you're using:\n" +
+        "Example:\n" + 
+        "<template lang=\"jade\">\n" +
+        "...\n" +
+        "</template>" 
+      );
+    } else {
+      const tagString = firstTagRegexpArr[1];
+      const tagName = tagString.split(" ")[0];
+      if( tagName === "template" ) {
+        const match = firstTagRegexpArr[0];
+        // Remove opening tag
+        let tempArr = templateMarkup.split( match );
+        tempArr.shift();
+        templateMarkup = tempArr.join( match );
+      
+        // Remove closing template tag.
+        tempArr = templateMarkup.split("</");
+        tempArr.pop();
+        templateMarkup = tempArr.join("</");
 
-  function removeTemplateTagIfAny( templateMarkup:string ) {
-    const attrs:Record<any,any> = {};
-    
-    const templateHeaderRegexp = /(<([\s]+)?template(([\s]+:?))?([^>]+)?>)|<\/([\s]+)?template([\s]+)?>/g
-    let templateAttrs = "";
-    const content = templateMarkup.replace( templateHeaderRegexp, (match, ...args) => {
-      if( args[4] ) templateAttrs = args[4] as string;
-      return "";
-    });
-    if( templateAttrs ) {
-      const m = templateAttrs.match( langAttrRegexp );
-      if( m ) attrs.lang = m[1];
-    }
-    return {
-      attrs,
-      content,
+        const m = tagString.match( langAttrRegexp );
+        if( m ) attrs.lang = m[1];
+      }
+
+      return {
+        content: templateMarkup,
+        attrs,
+      }
     }
   }
+
 }
 
 

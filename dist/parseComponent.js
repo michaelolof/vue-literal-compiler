@@ -88,7 +88,7 @@ function normalizeCustomBlocks(customBlocksDeclartion) {
     }
 }
 function normalizeTemplate(templateMarkup, start, end, isScoped) {
-    var _a = removeTemplateTagIfAny(templateMarkup), content = _a.content, attrs = _a.attrs;
+    var _a = removeWrappingTemplateTagsIfAny(templateMarkup, start, end), content = _a.content, attrs = _a.attrs;
     return {
         type: "template",
         attrs: attrs,
@@ -101,28 +101,46 @@ function normalizeTemplate(templateMarkup, start, end, isScoped) {
         module: undefined,
         src: undefined,
     };
-    function removeTemplateTagIfAny(templateMarkup) {
+    function removeWrappingTemplateTagsIfAny(templateMarkup, start, end) {
         var attrs = {};
-        var templateHeaderRegexp = /(<([\s]+)?template(([\s]+:?))?([^>]+)?>)|<\/([\s]+)?template([\s]+)?>/g;
-        var templateAttrs = "";
-        var content = templateMarkup.replace(templateHeaderRegexp, function (match) {
-            var args = [];
-            for (var _i = 1; _i < arguments.length; _i++) {
-                args[_i - 1] = arguments[_i];
-            }
-            if (args[4])
-                templateAttrs = args[4];
-            return "";
-        });
-        if (templateAttrs) {
-            var m = templateAttrs.match(langAttrRegexp);
-            if (m)
-                attrs.lang = m[1];
+        templateMarkup = templateMarkup.trim();
+        if (templateMarkup.length === 0)
+            return { content: "", attrs: attrs };
+        var firstTagRegexp = /<((.|\n)*?):?>/;
+        var firstTagRegexpArr = templateMarkup.match(firstTagRegexp);
+        if (firstTagRegexpArr === null) {
+            // markup has no initail tag name.
+            throw new Error("\n<template> tag not found.\n" +
+                "Usage of template tag is only optional if you're writing html.\n" +
+                "Are you trying to use a different template lang like pug or jade?\n" +
+                "If so specify the template language you're using:\n" +
+                "Example:\n" +
+                "<template lang=\"jade\">\n" +
+                "...\n" +
+                "</template>");
         }
-        return {
-            attrs: attrs,
-            content: content,
-        };
+        else {
+            var tagString = firstTagRegexpArr[1];
+            var tagName = tagString.split(" ")[0];
+            if (tagName === "template") {
+                var match = firstTagRegexpArr[0];
+                // Remove opening tag
+                var tempArr = templateMarkup.split(match);
+                tempArr.shift();
+                templateMarkup = tempArr.join(match);
+                // Remove closing template tag.
+                tempArr = templateMarkup.split("</");
+                tempArr.pop();
+                templateMarkup = tempArr.join("</");
+                var m = tagString.match(langAttrRegexp);
+                if (m)
+                    attrs.lang = m[1];
+            }
+            return {
+                content: templateMarkup,
+                attrs: attrs,
+            };
+        }
     }
 }
 function normalizeStyles(stylesWithTags, start) {
