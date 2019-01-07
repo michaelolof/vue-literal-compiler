@@ -216,7 +216,6 @@ function findAndReplaceFunctionalTemplate(file, rgx) {
                 content = replaceContentAtPosition(content, d.orignal, d.replaced);
             });
         }
-        console.log(content);
         matches.push({
             content: content,
             start: start,
