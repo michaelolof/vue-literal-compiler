@@ -2,7 +2,7 @@
 A simple stand in replacement for the default vue-template-compiler that allows you write Vue Templates, Scoped CSS, Custom Blocks and Scripts in SFC format all in your JavaScript/TypeScript files.
 
 ## Preview 
-![alt-text](./images/vue-vs-lit-preview.png)
+![alt-text](https://github.com/michaelolof/vue-literal-compiler/blob/master/images/vue-vs-lit-preview.png?raw=true)
 
 ## Motivation
 * Maintain the SFC paradigm. Write all your Templates, Styles and Scripts in one file (JavaScript/TypeScript)
