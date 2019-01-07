@@ -222,10 +222,6 @@ function findAndReplaceFunctionalTemplate(file:string, rgx:RegExp): Replacement 
       })
     }
 
-
-
-    console.log( content );
-
     matches.push({
       content,
       start,
