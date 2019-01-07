@@ -6,8 +6,7 @@ export interface Paddable {
   pad: "line" | "space",
 }
 
-const templateRegexp = /\/\*([\s\*]+)?@VueLiteralCompiler ([\s]+)?Template([\s]+)?\*\/([^`]+)?`[^`]+`/;
-const functionalTemplateRegexp = /\/\*([\s\*]+)?@VueLiteralCompiler([\s]+)?Functional Template([\s]+)?\*\/([^`]+)?`[^`]+`/;
+const templateRegexp = /\/\*([\s\*]+)?@VueLiteralCompiler([\s]+)?Template([\s]+)?\*\/([^`]+)?`[^`]+`/;
 const stylesRegexp = /\/\*\*([\s\*]+)?@VueLiteralCompiler([\s]+)?Styles([\s\*]+)?\*\/([^`]+)?`[^`]+`/;
 const customBlocksRegexp = /\/\*([\s\*]+)?@VueLiteralCompiler([\s]+)?Custom Block([\s]+)?\*\/([^`]+)?`[^`]+`/g;
 
@@ -28,16 +27,9 @@ export function parseComponent(file:string, options:Paddable = { pad: "line"}):S
     isScoped = n.isScoped;
   }
   
-  let templateReplacement = findAndReplaceDirective( file, templateRegexp );
-  // Check for normal template
+  const templateReplacement = findAndReplaceFunctionalTemplate( file, templateRegexp );
   if( templateReplacement.matches.length ) {
     template = normalizeTemplate( templateReplacement.matches[0].content, templateReplacement.matches[0].start, templateReplacement.matches[0].end, isScoped )
-  } else {
-    // Check for functional template
-    templateReplacement = findAndReplaceFunctionalTemplate( file, functionalTemplateRegexp );
-    if( templateReplacement.matches.length ) {
-      template = normalizeTemplate( templateReplacement.matches[0].content, templateReplacement.matches[0].start, templateReplacement.matches[0].end, isScoped )
-    }
   }
   file = templateReplacement.modified;
   
@@ -199,18 +191,41 @@ function findAndReplaceFunctionalTemplate(file:string, rgx:RegExp): Replacement 
 
   const modified = file.replace( rgx, (found, ...args) => {
     if( !found.length ) return "undefined";
-    const fatArrowString = args[ 3 ] as string;
-    const paramBlk = fatArrowString.split("=>")[0].split(":")[0].split("(");
-    const param = paramBlk[ paramBlk.length - 1 ].trim();
+    const assignmentStatement = args[ 3 ] as string;
     let content = removeDirective( found );
     start = args[4];
     end = found.length + start - 1;
-    const contentToken = hyntax.tokenize( content ).tokens as HyntaxToken[];
-    const variableTokens = fetchVariableTokens( contentToken, variableMatcher );
-    const dd = variableTokens.map( vtoken => resolveContent( vtoken, param, variableMatcher ) );
-    dd.map( d => { 
-      content = replaceContentAtPosition( content, d.orignal, d.replaced )
-    })
+    
+    if( templateIsFunctional( assignmentStatement ) ) {
+      const paramBlk = assignmentStatement.split("=>")[0].split("=")[1].split(":")[0].split("(");
+      const param = paramBlk[ paramBlk.length - 1 ].split(")")[0].trim();
+      if( param.length === 0 ) {
+        throw new Error(
+          "Vue Literal Compiler Error:\n"+
+          "Functional Templates with no parameters (() => any) are not supported.\n" +
+          "Either pass a single parameter using the fat arrow syntax or use a simple assignment template.\n" + 
+          "\nExamples of supported template signatures are:\n" +
+          "1. const template = `...`\n" +
+          "2. const template = app => `...`\n" +
+          "3. const template = (app) => `...`\n" +
+          "4. const template = (app:App) => `...`\n" +
+          "\n- A Functional template can only have one parameter which represents the instance of the Vue component.\n" +
+          "- Only Fat Arrow Syntax is supported for functional templates\n\n" 
+        );
+      }
+      
+      const contentToken = hyntax.tokenize( content ).tokens as HyntaxToken[];
+      const variableTokens = fetchVariableTokens( contentToken, variableMatcher );
+      const dd = variableTokens.map( vtoken => resolveContent( vtoken, param, variableMatcher ) );
+      dd.map( d => { 
+        content = replaceContentAtPosition( content, d.orignal, d.replaced )
+      })
+    }
+
+
+
+    console.log( content );
+
     matches.push({
       content,
       start,
@@ -226,6 +241,11 @@ function findAndReplaceFunctionalTemplate(file:string, rgx:RegExp): Replacement 
   }
 
   //--------------------------------------------------------
+
+  function templateIsFunctional(assignmentStatement:string) {
+    return assignmentStatement.indexOf("=>") > -1
+  }
+
   function replaceContentAtPosition(content:string, token:HyntaxToken, replaced:string) {
     return content.replace( token.content, replaced );
   }

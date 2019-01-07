@@ -4,7 +4,11 @@
   "description": "Compile Vue Template Literals into Render Functions at build time.",
   "main": "dist/index.js",
   "scripts": {
-    "test": "mocha -r ts-node/register test/**/*.test.ts --reporter=min --watch --watch-extensions ts"
+    "start": "rm dist/* && tsc --watch",
+    "test:unit": "mocha -r ts-node/register test/unit/**/*.test.ts --reporter=min --watch --watch-extensions ts",
+    "start:unit": "concurrently -r --kill-others \"npm run start\" \"npm run test:unit\"",
+    "test:e2e": "cd test/e2e && npm run start",
+    "start:e2e": "concurrently -r --kill-others \"npm run start\" \"npm run test:e2e\""
   },
   "repository": {
     "type": "git",
@@ -26,7 +30,8 @@
     "mocha": "^5.2.0",
     "ts-node": "^7.0.1",
     "typescript": "^3.2.2",
-    "webpack": "^4.28.3"
+    "webpack": "^4.28.3",
+    "webpack-cli": "^3.1.2"
   },
   "peerDependencies": {
     "webpack": "^4.1.0"
