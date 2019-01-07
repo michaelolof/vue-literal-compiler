@@ -1,6 +1,6 @@
 {
   "name": "vue-literal-compiler",
-  "version": "1.0.32",
+  "version": "1.1.5",
   "description": "Compile Vue Template Literals into Render Functions at build time.",
   "main": "dist/index.js",
   "scripts": {
