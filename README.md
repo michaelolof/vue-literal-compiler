@@ -4,7 +4,6 @@ A simple stand in replacement for the default vue-template-compiler that allows 
 ## Preview 
 ![alt-text](./images/vue-vs-lit-preview.png)
 
-
 ## Motivation
 * Maintain the SFC paradigm. Write all your Templates, Styles and Scripts in one file (JavaScript/TypeScript)
 * Compiles your literal templates into render functions at compile time rather than at runtime.
