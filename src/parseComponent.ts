@@ -295,7 +295,7 @@ function findAndReplaceFunctionalTemplate(file:string, rgx:RegExp): Replacement 
     const replaced = token.content.replace( variableMatcher, (match, ...args ) => {
       const declaration = args[ 0 ] as string;
       const paramCallRegx = new RegExp( param + "([\s]+)?.")
-      const resolvedDeclaration = declaration.replace( paramCallRegx, "" );
+      const resolvedDeclaration = declaration.split(" ").map( d => d.replace( paramCallRegx, "" ) ).join(" ");
       if( token.type === "token:text" ) return `{{ ${resolvedDeclaration} }}`
       else return resolvedDeclaration.trim();
     });
