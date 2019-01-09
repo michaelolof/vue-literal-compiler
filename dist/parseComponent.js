@@ -282,7 +282,7 @@ function findAndReplaceFunctionalTemplate(file, rgx) {
             }
             var declaration = args[0];
             var paramCallRegx = new RegExp(param + "([\s]+)?.");
-            var resolvedDeclaration = declaration.replace(paramCallRegx, "");
+            var resolvedDeclaration = declaration.split(" ").map(function (d) { return d.replace(paramCallRegx, ""); }).join(" ");
             if (token.type === "token:text")
                 return "{{ " + resolvedDeclaration + " }}";
             else
