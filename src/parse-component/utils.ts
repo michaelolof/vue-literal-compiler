@@ -1,5 +1,5 @@
 import { SFCBlock, SFCCustomBlock } from "@vue/component-compiler-utils/dist/parse";
-//@ts-ignore
+//@ts-ignore 
 import hyntax from "hyntax";
 
 
@@ -11,35 +11,33 @@ export const regexp = {
   langAttr: /lang=[\'\"]([a-z]+:?)[\'\"]/,
 }
 
-export function replaceMatchedDirective(file:string, rgx:RegExp):Replacement {
+export function matchJSDocDirective(content:string, rgx:RegExp):LiteralMatch {
   let matches:Match[] = [];
-  const modified = file.replace( rgx, (found, ...args) => {
-    if( found.length ) {
-      const match = ( removeDirective( found ) );
+
+  const modified = content.replace( rgx, (match, ...args) => {
+    if( match.length ) {
+      const content = getBacktildesContent( match );
       const start = parseInt( args[5] );
-      const end = start + found.length - 1;
-      matches.push({
-        content: match,
-        start,
-        end,
-      })
+      
+      // getLineNoFromPosition( )
+      
+      const end = start + match.length - 1;
+      matches.push({ content, start, end, });
     }
     return "";
   });
-  return {
-    matches,
-    modified,
-  }
+  
+  return { matches, modified, }
 }
 
-export function replaceMatchedTemplateDirective(file:string, rgx:RegExp): Replacement {
+export function matchJSDocTemplateDirective(file:string, rgx:RegExp): LiteralMatch {
   let matches:Match[] = [], start = 0, end = 0;  
   const variableMatcher = /\${([^}]+:?)}/;
 
   const modified = file.replace( rgx, (found, ...args) => {
     if( !found.length ) return "undefined";
     const assignmentStatement = args[ 3 ] as string;
-    let content = removeDirective( found );
+    let content = getBacktildesContent( found );
     start = args[4];
     end = found.length + start - 1;
     
@@ -130,14 +128,16 @@ export function replaceMatchedTemplateDirective(file:string, rgx:RegExp): Replac
 
 export function normalizeStyles(stylesWithTags:string, start:number ):NormalizedStyles {
   let isScoped:true|undefined = undefined
+  
   const stylesWithHeader = stylesWithTags.trimRight().split(/<\/([\s]+)?style([\s]+)?>/g).filter( v => v );
-  const styles = stylesWithHeader.map( s => { 
-    const n = normalizeStyle(s, start );
-    if( n.scoped ) isScoped = true;
-    start = n.end; // This tells the start index to begin at the end of the previous style;
-    return n;
-  });
 
+  const styles = stylesWithHeader.map( s => { 
+    const block = normalizeStyle(s, start );
+    if( block.scoped ) isScoped = true;
+    start = block.end; // This tells the start index to begin at the end of the previous style;
+    return block;
+  });
+  
   return {
     isScoped,
     styles
@@ -148,6 +148,10 @@ export function normalizeStyles(stylesWithTags:string, start:number ):Normalized
     let lang:string|undefined = undefined;
     let scoped:true|undefined = undefined;
     const attrs:Record<any, any> = {};
+
+    // console.log( start );
+    // console.log( styleWithHeader );
+    // console.log("================================")
 
     const styleHeaderRegexp = /<([^>]+)?>/g
     let styleHeader = "", compStart = 0, compEnd = 0;
@@ -286,13 +290,13 @@ export function normalizeScripts(modifiedFile:string):SFCBlock {
   }
 }
 
-function removeDirective(match:string) {
+function getBacktildesContent(match:string) {
   const startLiteralIndex = match.indexOf("`");
   const endDirective = match.indexOf("`", startLiteralIndex+1 );
   return match.slice( startLiteralIndex+1, endDirective );
 }
 
-export interface Replacement {
+export interface LiteralMatch {
   matches:Match[];
   modified:string;
 }
@@ -320,3 +324,11 @@ interface ResolvedLiteral {
   replaced:string;
 }
 
+function getLineNoFromPosition(content:string, position:number) {
+  let lineNo = 0;
+  content.substring( position );
+}
+
+function removeStringByPosition(str:string, start:number, end:number) {
+  return str.substr(0, start) + str.substr( end );
+}
