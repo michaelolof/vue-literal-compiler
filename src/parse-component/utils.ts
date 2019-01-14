@@ -286,25 +286,24 @@ export function normalizeScripts(modifiedFile:string):SFCBlock {
   }
 }
 
-
 function removeDirective(match:string) {
   const startLiteralIndex = match.indexOf("`");
   const endDirective = match.indexOf("`", startLiteralIndex+1 );
   return match.slice( startLiteralIndex+1, endDirective );
 }
 
-interface Replacement {
+export interface Replacement {
   matches:Match[];
   modified:string;
 }
 
-interface Match {
+export interface Match {
   content:string;
   start:number;
   end:number;
 }
 
-interface NormalizedStyles {
+export interface NormalizedStyles {
   isScoped:true|undefined;
   styles:SFCBlock[];
 }

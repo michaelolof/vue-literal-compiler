@@ -1,7 +1,4 @@
 "use strict";
-function __export(m) {
-    for (var p in m) if (!exports.hasOwnProperty(p)) exports[p] = m[p];
-}
 var __importStar = (this && this.__importStar) || function (mod) {
     if (mod && mod.__esModule) return mod;
     var result = {};
@@ -12,7 +9,8 @@ var __importStar = (this && this.__importStar) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 //@ts-ignore
 var compiler = __importStar(require("vue-template-compiler"));
-__export(require("./parseComponent"));
+var parse_component_1 = require("./parse-component");
+exports.parseComponent = parse_component_1.parseComponent;
 exports.compile = compiler.compile;
 exports.compileToFunctions = compiler.compileToFunctions;
 exports.ssrCompile = compiler.ssrCompile;
