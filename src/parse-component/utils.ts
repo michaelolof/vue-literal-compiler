@@ -109,23 +109,32 @@ export function matchJSDocTemplateDirective(fileContent:string, rgx:RegExp) {
   }
 }
 
-export function normalizeStyles(stylesWithTags:string, start:number ):NormalizedStyles {
+export function normalizeStyles(stylesWithTags:string, start:number, end:number ):NormalizedStyles {
   let isScoped:true|undefined = undefined
   
   const stylesWithHeader = stylesWithTags.trimRight().split(/<\/([\s]+)?style([\s]+)?>/g).filter( v => v );
 
+  let startPositionOfEachStyleTag = start;
   const styles = stylesWithHeader.map( s => { 
-    const block = normalizeStyle(s, start );
+    const block = normalizeStyle(s, startPositionOfEachStyleTag );
     if( block.scoped ) isScoped = true;
-    start = block.end; // This tells the start index to begin at the end of the previous style;
+    startPositionOfEachStyleTag = block.end; // This tells the start index to begin at the end of the previous style index;
     return block;
   });
+
+  // For Optional Style Tags, update start and end position with originally matched positions.
+  if( styles.length === 1 && styles[0].start === 0 && styles[0].end === 0 ) {
+    styles[0].start = start;
+    styles[0].end = end;
+  }
+  
   
   return {
     isScoped,
-    styles
+    styles,
+    start,
+    end,
   }
-
   //-------------------------------------------------------------------------------------
   function normalizeStyle(styleWithHeader:string, start:number ):SFCBlock {
     let lang:string|undefined = undefined;
@@ -292,6 +301,8 @@ export interface Match {
 export interface NormalizedStyles {
   isScoped:true|undefined;
   styles:SFCBlock[];
+  start:number,
+  end:number,
 }
 
 interface HyntaxToken {
@@ -306,11 +317,6 @@ interface ResolvedLiteral {
   replaced:string;
 }
 
-function getLineNoFromPosition(content:string, position:number) {
-  let lineNo = 0;
-  content.substring( position );
-}
-
-function removeStringByPosition(str:string, start:number, end:number) {
+export function removeStringByPosition(str:string, start:number, end:number) {
   return str.substr(0, start) + str.substr( end );
 }

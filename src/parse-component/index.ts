@@ -23,7 +23,7 @@ export function parseComponent(fileContent:string, options:Paddable = { pad: "li
 
   const styleMatches = matchJSDocDirective( fileContent, regexp.styles );
   if( styleMatches.length ) {
-    const normalizedStyles = normalizeStyles( styleMatches[0].content, styleMatches[0].start );
+    const normalizedStyles = normalizeStyles( styleMatches[0].content, styleMatches[0].start, styleMatches[0].end );
     styles = normalizedStyles.styles;
     isScoped = normalizedStyles.isScoped;
   }
