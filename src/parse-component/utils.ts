@@ -67,7 +67,6 @@ export function matchJSDocTemplateDirective(fileContent:string, rgx:RegExp) {
   //--------------------------------------------------------
 
   function templateIsFunctional(assignmentStatement:string) {
-
     return assignmentStatement.indexOf("=>") > -1
   }
 
@@ -97,7 +96,9 @@ export function matchJSDocTemplateDirective(fileContent:string, rgx:RegExp) {
 
   function resolveContent(token:HyntaxToken, param:string, variableMatcher:RegExp):ResolvedLiteral {
     const replaced = token.content.replace( variableMatcher, (match, ...args ) => {
-      const declaration = args[ 0 ] as string;
+      let declaration = args[ 0 ] as string;
+      // Remove the any <any> type cast.
+      declaration = declaration.replace("<any>", "" )
       const paramCallRegx = new RegExp( param + "([\s]+)?.")
       const resolvedDeclaration = declaration.split(" ").map( d => d.replace( paramCallRegx, "" ) ).join(" ");
       if( token.type === "token:text" ) return `{{ ${resolvedDeclaration} }}`

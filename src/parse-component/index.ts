@@ -31,6 +31,7 @@ export function parseComponent(fileContent:string, options:Paddable = { pad: "li
   
   const templateMatches = matchJSDocTemplateDirective( fileContent, regexp.template );
   if( templateMatches.length ) {
+    console.log( templateMatches[0].content );
     template = normalizeTemplate( templateMatches[0].content, templateMatches[0].start, templateMatches[0].end, isScoped );
   }
   
