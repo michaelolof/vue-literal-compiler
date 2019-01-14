@@ -1,8 +1,8 @@
 import { SFCDescriptor, SFCBlock, SFCCustomBlock } from "@vue/component-compiler-utils/dist/parse";
 import { 
   regexp, 
-  replaceMatchedDirective as matchJSDocDirective, 
-  replaceMatchedTemplateDirective as matchJSDocDirective, 
+  matchJSDocDirective, 
+  matchJSDocTemplateDirective,
   normalizeStyles,
   normalizeTemplate,
   normalizeCustomBlocks,
@@ -21,24 +21,24 @@ export function parseComponent(fileContent:string, options:Paddable = { pad: "li
   let customBlocks:SFCCustomBlock[] = [];
   let script: SFCBlock|null;
 
-  const { modified: contentWithoutStyles, matches: styleMatches } = matchJSDocDirective( fileContent, regexp.styles );
+  const styleMatches = matchJSDocDirective( fileContent, regexp.styles );
   if( styleMatches.length ) {
     const normalizedStyles = normalizeStyles( styleMatches[0].content, styleMatches[0].start );
     styles = normalizedStyles.styles;
     isScoped = normalizedStyles.isScoped;
   }
   
-  const { modified: contentWithoutTemplate, matches: templateMatches } = matchJSDocDirective( contentWithoutStyles, regexp.template );
+  const templateMatches = matchJSDocTemplateDirective( fileContent, regexp.template );
   if( templateMatches.length ) {
-    template = normalizeTemplate( templateMatches[0].content, templateMatches[0].start, templateMatches[0].end, isScoped )
+    template = normalizeTemplate( templateMatches[0].content, templateMatches[0].start, templateMatches[0].end, isScoped );
   }
   
-  const { modified: contentWithoutCustomBlocks, matches: customMatches } = matchJSDocDirective( contentWithoutTemplate, regexp.customBlock );
-  if( customMatches.length ) {
-    customBlocks = normalizeCustomBlocks( customMatches );
+  const customBlockMatches = matchJSDocDirective( fileContent, regexp.customBlock );
+  if( customBlockMatches.length ) {
+    customBlocks = normalizeCustomBlocks( customBlockMatches );
   }
 
-  script = normalizeScripts( contentWithoutCustomBlocks );
+  script = normalizeScripts( fileContent );
 
   return {
     template,

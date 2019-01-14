@@ -11,76 +11,59 @@ export const regexp = {
   langAttr: /lang=[\'\"]([a-z]+:?)[\'\"]/,
 }
 
-export function matchJSDocDirective(content:string, rgx:RegExp):LiteralMatch {
+export function matchJSDocDirective(fileContent:string, rgx:RegExp) {
   let matches:Match[] = [];
 
-  const modified = content.replace( rgx, (match, ...args) => {
-    if( match.length ) {
-      const content = getBacktildesContent( match );
-      const start = parseInt( args[5] );
-      
-      // getLineNoFromPosition( )
-      
-      const end = start + match.length - 1;
-      matches.push({ content, start, end, });
-    }
-    return "";
-  });
+  const regexpArr = rgx.exec( fileContent );
+  if( regexpArr === null ) return matches;
+
+  const match = regexpArr[0];
+  const content = getBacktildesContent( match );
+  const start = regexpArr.index;
+  const end = start + match.length;
+  matches.push({ content, start, end }); 
   
-  return { matches, modified, }
+  return matches
 }
 
-export function matchJSDocTemplateDirective(file:string, rgx:RegExp): LiteralMatch {
-  let matches:Match[] = [], start = 0, end = 0;  
-  const variableMatcher = /\${([^}]+:?)}/;
+export function matchJSDocTemplateDirective(fileContent:string, rgx:RegExp) {
+  let matches:Match[] = [], start = 0, end = 0;
+  
+  const regexpArr = rgx.exec( fileContent );
+  if( regexpArr === null ) return matches;
+  const match = regexpArr[0];
+  start = regexpArr.index;
+  end = start + match.length;
+  let content = getBacktildesContent( match );
 
-  const modified = file.replace( rgx, (found, ...args) => {
-    if( !found.length ) return "undefined";
-    const assignmentStatement = args[ 3 ] as string;
-    let content = getBacktildesContent( found );
-    start = args[4];
-    end = found.length + start - 1;
-    
-    if( templateIsFunctional( assignmentStatement ) ) {
-      const paramBlk = assignmentStatement.split("=>")[0].split("=")[1].split(":")[0].split("(");
-      const param = paramBlk[ paramBlk.length - 1 ].split(")")[0].trim();
-      if( param.length === 0 ) {
-        throw new Error(
-          "Vue Literal Compiler Error:\n"+
-          "Functional Templates with no parameters (() => any) are not supported.\n" +
-          "Either pass a single parameter using the fat arrow syntax or use a simple assignment template.\n" + 
-          "\nExamples of supported template signatures are:\n" +
-          "1. const template = `...`\n" +
-          "2. const template = app => `...`\n" +
-          "3. const template = (app) => `...`\n" +
-          "4. const template = (app:App) => `...`\n" +
-          "\n- A Functional template can only have one parameter which represents the instance of the Vue component.\n" +
-          "- Only Fat Arrow Syntax is supported for functional templates\n\n" 
-        );
-      }
-      
-      const contentToken = hyntax.tokenize( content ).tokens as HyntaxToken[];
-      const variableTokens = fetchVariableTokens( contentToken, variableMatcher );
-      const dd = variableTokens.map( vtoken => resolveContent( vtoken, param, variableMatcher ) );
-      dd.map( d => { 
-        content = replaceContentAtPosition( content, d.orignal, d.replaced )
-      })
+  const assignmentStatement = regexpArr[ regexpArr.length - 1 ];
+  if( templateIsFunctional( assignmentStatement ) ) {
+    const variableMatcher = /\${([^}]+:?)}/;      
+    const paramBlk = assignmentStatement.split("=>")[0].split("=")[1].split(":")[0].split("(");
+    const param = paramBlk[ paramBlk.length - 1 ].split(")")[0].trim();
+    if( param.length === 0 ) {
+      throw new Error(
+        "Vue Literal Compiler Error:\n"+
+        "Functional Templates with no parameters (() => any) are not supported.\n" +
+        "Either pass a single parameter using the fat arrow syntax or use a simple assignment template.\n" + 
+        "\nExamples of supported template signatures are:\n" +
+        "1. const template = `...`\n" +
+        "2. const template = app => `...`\n" +
+        "3. const template = (app) => `...`\n" +
+        "4. const template = (app:App) => `...`\n" +
+        "\n- A Functional template can only have one parameter which represents the instance of the Vue component.\n" +
+        "- Only Fat Arrow Syntax is supported for functional templates\n\n" 
+      );
     }
-
-    matches.push({
-      content,
-      start,
-      end
-    })
-
-    return "";
-  })
     
-  return {
-    matches,
-    modified,
+    const contentToken = hyntax.tokenize( content ).tokens as HyntaxToken[];
+    const variableTokens = fetchVariableTokens( contentToken, variableMatcher );
+    const dd = variableTokens.map( vtoken => resolveContent( vtoken, param, variableMatcher ) );
+    dd.map( d => content = replaceContentAtPosition( content, d.orignal, d.replaced ));
   }
 
+  matches.push({ content, start, end });
+  return matches;
   //--------------------------------------------------------
 
   function templateIsFunctional(assignmentStatement:string) {
@@ -148,10 +131,6 @@ export function normalizeStyles(stylesWithTags:string, start:number ):Normalized
     let lang:string|undefined = undefined;
     let scoped:true|undefined = undefined;
     const attrs:Record<any, any> = {};
-
-    // console.log( start );
-    // console.log( styleWithHeader );
-    // console.log("================================")
 
     const styleHeaderRegexp = /<([^>]+)?>/g
     let styleHeader = "", compStart = 0, compEnd = 0;
@@ -237,8 +216,12 @@ export function normalizeTemplate(templateMarkup:string, start:number, end:numbe
         tempArr.pop();
         templateMarkup = tempArr.join("</");
 
-        const m = tagString.match( regexp.langAttr );
-        if( m ) attrs.lang = m[1];
+        // Check template header for lang attribute.
+        const langAttrMatched = tagString.match( regexp.langAttr );
+        if( langAttrMatched ) attrs.lang = langAttrMatched[1];
+
+        // Check template header for functional attribute.
+        if( tagString.indexOf("functional") > -1 ) attrs.functional = true;
       }
 
       return {
@@ -247,7 +230,6 @@ export function normalizeTemplate(templateMarkup:string, start:number, end:numbe
       }
     }
   }
-
 }
 
 export function normalizeCustomBlocks(customBlocksDeclartion:Match[]) {
