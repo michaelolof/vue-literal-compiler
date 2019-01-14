@@ -4,24 +4,24 @@ import hyntax from "hyntax";
 
 
 export const regexp = {
-  template: /\/\*([\s\*]+)?@VueLiteralCompiler([\s]+)?Template([\s]+)?\*\/([^`]+)?`[^`]+`/,
-  styles: /\/\*\*([\s\*]+)?@VueLiteralCompiler([\s]+)?Styles([\s\*]+)?\*\/([^`]+)?`[^`]+`/,
-  customBlock: /\/\*([\s\*]+)?@VueLiteralCompiler([\s]+)?Custom Block([\s]+)?\*\/([^`]+)?`[^`]+`/g,
-  
+  template: /\/\*([\s\*]+)?@VueLiteralCompiler([\s]+)?Template([\s]+)?\*\/([^`]+)?`[^`]+`([\s]+)?;?/,
+  styles: /\/\*\*([\s\*]+)?@VueLiteralCompiler([\s]+)?Styles([\s\*]+)?\*\/([^`]+)?`[^`]+`([\s]+)?;?/g,
+  customBlock: /\/\*([\s\*]+)?@VueLiteralCompiler([\s]+)?Custom Block([\s]+)?\*\/([^`]+)?`[^`]+`([\s]+)?;?/g,
   langAttr: /lang=[\'\"]([a-z]+:?)[\'\"]/,
 }
 
 export function matchJSDocDirective(fileContent:string, rgx:RegExp) {
   let matches:Match[] = [];
 
-  const regexpArr = rgx.exec( fileContent );
-  if( regexpArr === null ) return matches;
-
-  const match = regexpArr[0];
-  const content = getBacktildesContent( match );
-  const start = regexpArr.index;
-  const end = start + match.length;
-  matches.push({ content, start, end }); 
+  let regexpArr:RegExpExecArray;
+  //@ts-ignore
+  while((regexpArr = rgx.exec( fileContent )) !== null ) {
+    const match = regexpArr[0];
+    const content = getBacktildesContent( match );
+    const start = regexpArr.index;
+    const end = start + match.length;
+    matches.push({ content, start, end });   
+  }
   
   return matches
 }
@@ -36,7 +36,7 @@ export function matchJSDocTemplateDirective(fileContent:string, rgx:RegExp) {
   end = start + match.length;
   let content = getBacktildesContent( match );
 
-  const assignmentStatement = regexpArr[ regexpArr.length - 1 ];
+  const assignmentStatement = regexpArr[ regexpArr.length - 2 ];
   if( templateIsFunctional( assignmentStatement ) ) {
     const variableMatcher = /\${([^}]+:?)}/;      
     const paramBlk = assignmentStatement.split("=>")[0].split("=")[1].split(":")[0].split("(");
@@ -67,6 +67,7 @@ export function matchJSDocTemplateDirective(fileContent:string, rgx:RegExp) {
   //--------------------------------------------------------
 
   function templateIsFunctional(assignmentStatement:string) {
+
     return assignmentStatement.indexOf("=>") > -1
   }
 
@@ -317,6 +318,15 @@ interface ResolvedLiteral {
   replaced:string;
 }
 
-export function removeStringByPosition(str:string, start:number, end:number) {
-  return str.substr(0, start) + str.substr( end );
+export interface DeclarationsArePresent {
+  template:boolean;
+  styles:boolean;
+  customBlock:boolean;
+}
+
+export function removeDeclarations(str:string, isPresent:DeclarationsArePresent ) {
+  if( isPresent.template ) str = str.replace( regexp.template, "" );
+  if( isPresent.styles ) str = str.replace( regexp.styles, "" );
+  if( isPresent.customBlock ) str = str.replace( regexp.customBlock, "" );
+  return str;
 }

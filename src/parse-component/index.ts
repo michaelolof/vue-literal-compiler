@@ -7,6 +7,7 @@ import {
   normalizeTemplate,
   normalizeCustomBlocks,
   normalizeScripts,
+  removeDeclarations,
 } from "./utils";
 
 export interface Paddable {
@@ -38,7 +39,13 @@ export function parseComponent(fileContent:string, options:Paddable = { pad: "li
     customBlocks = normalizeCustomBlocks( customBlockMatches );
   }
 
-  script = normalizeScripts( fileContent );
+  const scriptContent = removeDeclarations( fileContent, {
+    template: templateMatches.length > 0,
+    styles: styleMatches.length > 0,
+    customBlock: customBlockMatches.length > 0,
+  });
+
+  script = normalizeScripts( scriptContent );
 
   return {
     template,
@@ -48,3 +55,5 @@ export function parseComponent(fileContent:string, options:Paddable = { pad: "li
   }
 
 }
+
+
