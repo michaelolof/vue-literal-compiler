@@ -3,86 +3,61 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-//@ts-ignore
+//@ts-ignore 
 var hyntax_1 = __importDefault(require("hyntax"));
 exports.regexp = {
-    template: /\/\*([\s\*]+)?@VueLiteralCompiler([\s]+)?Template([\s]+)?\*\/([^`]+)?`[^`]+`/,
-    styles: /\/\*\*([\s\*]+)?@VueLiteralCompiler([\s]+)?Styles([\s\*]+)?\*\/([^`]+)?`[^`]+`/,
-    customBlock: /\/\*([\s\*]+)?@VueLiteralCompiler([\s]+)?Custom Block([\s]+)?\*\/([^`]+)?`[^`]+`/g,
+    template: /\/\*([\s\*]+)?@VueLiteralCompiler([\s]+)?Template([\s]+)?\*\/([^`]+)?`[^`]+`([\s]+)?;?/,
+    styles: /\/\*\*([\s\*]+)?@VueLiteralCompiler([\s]+)?Styles([\s\*]+)?\*\/([^`]+)?`[^`]+`([\s]+)?;?/g,
+    customBlock: /\/\*([\s\*]+)?@VueLiteralCompiler([\s]+)?Custom Block([\s]+)?\*\/([^`]+)?`[^`]+`([\s]+)?;?/g,
     langAttr: /lang=[\'\"]([a-z]+:?)[\'\"]/,
 };
-function replaceMatchedDirective(file, rgx) {
+function matchJSDocDirective(fileContent, rgx) {
     var matches = [];
-    var modified = file.replace(rgx, function (found) {
-        var args = [];
-        for (var _i = 1; _i < arguments.length; _i++) {
-            args[_i - 1] = arguments[_i];
-        }
-        if (found.length) {
-            var match = (removeDirective(found));
-            var start = parseInt(args[5]);
-            var end = start + found.length - 1;
-            matches.push({
-                content: match,
-                start: start,
-                end: end,
-            });
-        }
-        return "";
-    });
-    return {
-        matches: matches,
-        modified: modified,
-    };
+    var regexpArr;
+    //@ts-ignore
+    while ((regexpArr = rgx.exec(fileContent)) !== null) {
+        var match = regexpArr[0];
+        var content = getBacktildesContent(match);
+        var start = regexpArr.index;
+        var end = start + match.length;
+        matches.push({ content: content, start: start, end: end });
+    }
+    return matches;
 }
-exports.replaceMatchedDirective = replaceMatchedDirective;
-function replaceMatchedTemplateDirective(file, rgx) {
+exports.matchJSDocDirective = matchJSDocDirective;
+function matchJSDocTemplateDirective(fileContent, rgx) {
     var matches = [], start = 0, end = 0;
-    var variableMatcher = /\${([^}]+:?)}/;
-    var modified = file.replace(rgx, function (found) {
-        var args = [];
-        for (var _i = 1; _i < arguments.length; _i++) {
-            args[_i - 1] = arguments[_i];
+    var regexpArr = rgx.exec(fileContent);
+    if (regexpArr === null)
+        return matches;
+    var match = regexpArr[0];
+    start = regexpArr.index;
+    end = start + match.length;
+    var content = getBacktildesContent(match);
+    var assignmentStatement = regexpArr[regexpArr.length - 2];
+    if (templateIsFunctional(assignmentStatement)) {
+        var variableMatcher_1 = /\${([^}]+:?)}/;
+        var paramBlk = assignmentStatement.split("=>")[0].split("=")[1].split(":")[0].split("(");
+        var param_1 = paramBlk[paramBlk.length - 1].split(")")[0].trim();
+        if (param_1.length === 0) {
+            throw new Error("Vue Literal Compiler Error:\n" +
+                "Functional Templates with no parameters (() => any) are not supported.\n" +
+                "Either pass a single parameter using the fat arrow syntax or use a simple assignment template.\n" +
+                "\nExamples of supported template signatures are:\n" +
+                "1. const template = `...`\n" +
+                "2. const template = app => `...`\n" +
+                "3. const template = (app) => `...`\n" +
+                "4. const template = (app:App) => `...`\n" +
+                "\n- A Functional template can only have one parameter which represents the instance of the Vue component.\n" +
+                "- Only Fat Arrow Syntax is supported for functional templates\n\n");
         }
-        if (!found.length)
-            return "undefined";
-        var assignmentStatement = args[3];
-        var content = removeDirective(found);
-        start = args[4];
-        end = found.length + start - 1;
-        if (templateIsFunctional(assignmentStatement)) {
-            var paramBlk = assignmentStatement.split("=>")[0].split("=")[1].split(":")[0].split("(");
-            var param_1 = paramBlk[paramBlk.length - 1].split(")")[0].trim();
-            if (param_1.length === 0) {
-                throw new Error("Vue Literal Compiler Error:\n" +
-                    "Functional Templates with no parameters (() => any) are not supported.\n" +
-                    "Either pass a single parameter using the fat arrow syntax or use a simple assignment template.\n" +
-                    "\nExamples of supported template signatures are:\n" +
-                    "1. const template = `...`\n" +
-                    "2. const template = app => `...`\n" +
-                    "3. const template = (app) => `...`\n" +
-                    "4. const template = (app:App) => `...`\n" +
-                    "\n- A Functional template can only have one parameter which represents the instance of the Vue component.\n" +
-                    "- Only Fat Arrow Syntax is supported for functional templates\n\n");
-            }
-            var contentToken = hyntax_1.default.tokenize(content).tokens;
-            var variableTokens = fetchVariableTokens(contentToken, variableMatcher);
-            var dd = variableTokens.map(function (vtoken) { return resolveContent(vtoken, param_1, variableMatcher); });
-            dd.map(function (d) {
-                content = replaceContentAtPosition(content, d.orignal, d.replaced);
-            });
-        }
-        matches.push({
-            content: content,
-            start: start,
-            end: end
-        });
-        return "";
-    });
-    return {
-        matches: matches,
-        modified: modified,
-    };
+        var contentToken = hyntax_1.default.tokenize(content).tokens;
+        var variableTokens = fetchVariableTokens(contentToken, variableMatcher_1);
+        var dd = variableTokens.map(function (vtoken) { return resolveContent(vtoken, param_1, variableMatcher_1); });
+        dd.map(function (d) { return content = replaceContentAtPosition(content, d.orignal, d.replaced); });
+    }
+    matches.push({ content: content, start: start, end: end });
+    return matches;
     //--------------------------------------------------------
     function templateIsFunctional(assignmentStatement) {
         return assignmentStatement.indexOf("=>") > -1;
@@ -119,6 +94,8 @@ function replaceMatchedTemplateDirective(file, rgx) {
                 args[_i - 1] = arguments[_i];
             }
             var declaration = args[0];
+            // Remove the any <any> type cast.
+            declaration = declaration.replace("<any>", "");
             var paramCallRegx = new RegExp(param + "([\s]+)?.");
             var resolvedDeclaration = declaration.split(" ").map(function (d) { return d.replace(paramCallRegx, ""); }).join(" ");
             if (token.type === "token:text")
@@ -132,20 +109,28 @@ function replaceMatchedTemplateDirective(file, rgx) {
         };
     }
 }
-exports.replaceMatchedTemplateDirective = replaceMatchedTemplateDirective;
-function normalizeStyles(stylesWithTags, start) {
+exports.matchJSDocTemplateDirective = matchJSDocTemplateDirective;
+function normalizeStyles(stylesWithTags, start, end) {
     var isScoped = undefined;
     var stylesWithHeader = stylesWithTags.trimRight().split(/<\/([\s]+)?style([\s]+)?>/g).filter(function (v) { return v; });
+    var startPositionOfEachStyleTag = start;
     var styles = stylesWithHeader.map(function (s) {
-        var n = normalizeStyle(s, start);
-        if (n.scoped)
+        var block = normalizeStyle(s, startPositionOfEachStyleTag);
+        if (block.scoped)
             isScoped = true;
-        start = n.end; // This tells the start index to begin at the end of the previous style;
-        return n;
+        startPositionOfEachStyleTag = block.end; // This tells the start index to begin at the end of the previous style index;
+        return block;
     });
+    // For Optional Style Tags, update start and end position with originally matched positions.
+    if (styles.length === 1 && styles[0].start === 0 && styles[0].end === 0) {
+        styles[0].start = start;
+        styles[0].end = end;
+    }
     return {
         isScoped: isScoped,
-        styles: styles
+        styles: styles,
+        start: start,
+        end: end,
     };
     //-------------------------------------------------------------------------------------
     function normalizeStyle(styleWithHeader, start) {
@@ -234,9 +219,13 @@ function normalizeTemplate(templateMarkup, start, end, isScoped) {
                 tempArr = templateMarkup.split("</");
                 tempArr.pop();
                 templateMarkup = tempArr.join("</");
-                var m = tagString.match(exports.regexp.langAttr);
-                if (m)
-                    attrs.lang = m[1];
+                // Check template header for lang attribute.
+                var langAttrMatched = tagString.match(exports.regexp.langAttr);
+                if (langAttrMatched)
+                    attrs.lang = langAttrMatched[1];
+                // Check template header for functional attribute.
+                if (tagString.indexOf("functional") > -1)
+                    attrs.functional = true;
             }
             return {
                 content: templateMarkup,
@@ -292,8 +281,18 @@ function normalizeScripts(modifiedFile) {
     };
 }
 exports.normalizeScripts = normalizeScripts;
-function removeDirective(match) {
+function getBacktildesContent(match) {
     var startLiteralIndex = match.indexOf("`");
     var endDirective = match.indexOf("`", startLiteralIndex + 1);
     return match.slice(startLiteralIndex + 1, endDirective);
 }
+function removeDeclarations(str, isPresent) {
+    if (isPresent.template)
+        str = str.replace(exports.regexp.template, "");
+    if (isPresent.styles)
+        str = str.replace(exports.regexp.styles, "");
+    if (isPresent.customBlock)
+        str = str.replace(exports.regexp.customBlock, "");
+    return str;
+}
+exports.removeDeclarations = removeDeclarations;

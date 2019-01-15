@@ -8,21 +8,26 @@ function parseComponent(fileContent, options) {
     var template = null;
     var customBlocks = [];
     var script;
-    var _a = utils_1.replaceMatchedDirective(fileContent, utils_1.regexp.styles), contentWithoutStyles = _a.modified, styleMatches = _a.matches;
+    var styleMatches = utils_1.matchJSDocDirective(fileContent, utils_1.regexp.styles);
     if (styleMatches.length) {
-        var normalizedStyles = utils_1.normalizeStyles(styleMatches[0].content, styleMatches[0].start);
+        var normalizedStyles = utils_1.normalizeStyles(styleMatches[0].content, styleMatches[0].start, styleMatches[0].end);
         styles = normalizedStyles.styles;
         isScoped = normalizedStyles.isScoped;
     }
-    var _b = utils_1.replaceMatchedTemplateDirective(contentWithoutStyles, utils_1.regexp.template), contentWithoutTemplate = _b.modified, templateMatches = _b.matches;
+    var templateMatches = utils_1.matchJSDocTemplateDirective(fileContent, utils_1.regexp.template);
     if (templateMatches.length) {
         template = utils_1.normalizeTemplate(templateMatches[0].content, templateMatches[0].start, templateMatches[0].end, isScoped);
     }
-    var _c = utils_1.replaceMatchedDirective(contentWithoutTemplate, utils_1.regexp.customBlock), contentWithoutCustomBlocks = _c.modified, customMatches = _c.matches;
-    if (customMatches.length) {
-        customBlocks = utils_1.normalizeCustomBlocks(customMatches);
+    var customBlockMatches = utils_1.matchJSDocDirective(fileContent, utils_1.regexp.customBlock);
+    if (customBlockMatches.length) {
+        customBlocks = utils_1.normalizeCustomBlocks(customBlockMatches);
     }
-    script = utils_1.normalizeScripts(contentWithoutCustomBlocks);
+    var scriptContentOnly = utils_1.removeDeclarations(fileContent, {
+        template: templateMatches.length > 0,
+        styles: styleMatches.length > 0,
+        customBlock: customBlockMatches.length > 0,
+    });
+    script = utils_1.normalizeScripts(scriptContentOnly);
     return {
         template: template,
         script: script,

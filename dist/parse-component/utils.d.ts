@@ -5,17 +5,17 @@ export declare const regexp: {
     customBlock: RegExp;
     langAttr: RegExp;
 };
-export declare function replaceMatchedDirective(file: string, rgx: RegExp): Replacement;
-export declare function replaceMatchedTemplateDirective(file: string, rgx: RegExp): Replacement;
-export declare function normalizeStyles(stylesWithTags: string, start: number): NormalizedStyles;
+export declare function matchJSDocDirective(fileContent: string, rgx: RegExp): MatchedDeclaration[];
+export declare function matchJSDocTemplateDirective(fileContent: string, rgx: RegExp): MatchedDeclaration[];
+export declare function normalizeStyles(stylesWithTags: string, start: number, end: number): NormalizedStyles;
 export declare function normalizeTemplate(templateMarkup: string, start: number, end: number, isScoped: true | undefined): SFCBlock | null;
-export declare function normalizeCustomBlocks(customBlocksDeclartion: Match[]): SFCCustomBlock[];
+export declare function normalizeCustomBlocks(customBlocksDeclartion: MatchedDeclaration[]): SFCCustomBlock[];
 export declare function normalizeScripts(modifiedFile: string): SFCBlock;
-export interface Replacement {
-    matches: Match[];
+export interface LiteralMatch {
+    matches: MatchedDeclaration[];
     modified: string;
 }
-export interface Match {
+export interface MatchedDeclaration {
     content: string;
     start: number;
     end: number;
@@ -23,4 +23,12 @@ export interface Match {
 export interface NormalizedStyles {
     isScoped: true | undefined;
     styles: SFCBlock[];
+    start: number;
+    end: number;
 }
+export interface DeclarationsArePresent {
+    template: boolean;
+    styles: boolean;
+    customBlock: boolean;
+}
+export declare function removeDeclarations(str: string, isPresent: DeclarationsArePresent): string;
