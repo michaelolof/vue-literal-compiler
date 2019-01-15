@@ -13,6 +13,13 @@ A simple stand in replacement for the default vue-template-compiler that allows 
 * Provide Support for Custom Blocks in JavaScript/TypeScript.
 * Provide Support for lintable typesafe templates using Functional Templates
 
+## Change Log
+  - ### v 1.2.6
+    - Added Support for Type Safe `v-for` bindings.
+  - ### v 1.2.5
+    - Opening and Closing Style Tags `<style></style>` are now optional. (They will be global by default)
+    - Added Support for Functional Templates.
+
 ## See Working Examples
 * [Vue Literal Compiler Sample](https://github.com/michaelolof/vue-literal-compiler-sample)
 
