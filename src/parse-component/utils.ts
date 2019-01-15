@@ -11,7 +11,7 @@ export const regexp = {
 }
 
 export function matchJSDocDirective(fileContent:string, rgx:RegExp) {
-  let matches:Match[] = [];
+  let matches:MatchedDeclaration[] = [];
 
   let regexpArr:RegExpExecArray;
   //@ts-ignore
@@ -27,7 +27,7 @@ export function matchJSDocDirective(fileContent:string, rgx:RegExp) {
 }
 
 export function matchJSDocTemplateDirective(fileContent:string, rgx:RegExp) {
-  let matches:Match[] = [], start = 0, end = 0;
+  let matches:MatchedDeclaration[] = [], start = 0, end = 0;
   
   const regexpArr = rgx.exec( fileContent );
   if( regexpArr === null ) return matches;
@@ -243,10 +243,10 @@ export function normalizeTemplate(templateMarkup:string, start:number, end:numbe
   }
 }
 
-export function normalizeCustomBlocks(customBlocksDeclartion:Match[]) {
+export function normalizeCustomBlocks(customBlocksDeclartion:MatchedDeclaration[]) {
   return customBlocksDeclartion.map( c => normalize( c ) );
 
-  function normalize(customBlock:Match):SFCCustomBlock {
+  function normalize(customBlock:MatchedDeclaration):SFCCustomBlock {
     let type = "";
     const attrs:Record<any, any> = {};
     const customBlockTypeRegex = /<(([\s]+)?[^>]+:?)>/
@@ -276,7 +276,7 @@ export function normalizeScripts(modifiedFile:string):SFCBlock {
   return {
     type: "script",
     content: modifiedFile,
-    lang: "ts", // Hard code a default to ts right now. Will be modified.
+    lang: "ts", // Hard code a default to 'ts' right now. Will be modified later.
     attrs: { lang: "ts" },
     start: 0, // Pass in an abitrary number.
     end: modifiedFile.length // Pass in an arbitraty number.
@@ -286,15 +286,15 @@ export function normalizeScripts(modifiedFile:string):SFCBlock {
 function getBacktildesContent(match:string) {
   const startLiteralIndex = match.indexOf("`");
   const endDirective = match.indexOf("`", startLiteralIndex+1 );
-  return match.slice( startLiteralIndex+1, endDirective );
+  return match.slice( startLiteralIndex + 1, endDirective );
 }
 
 export interface LiteralMatch {
-  matches:Match[];
+  matches:MatchedDeclaration[];
   modified:string;
 }
 
-export interface Match {
+export interface MatchedDeclaration {
   content:string;
   start:number;
   end:number;

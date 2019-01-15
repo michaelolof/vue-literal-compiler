@@ -31,7 +31,6 @@ export function parseComponent(fileContent:string, options:Paddable = { pad: "li
   
   const templateMatches = matchJSDocTemplateDirective( fileContent, regexp.template );
   if( templateMatches.length ) {
-    console.log( templateMatches[0].content );
     template = normalizeTemplate( templateMatches[0].content, templateMatches[0].start, templateMatches[0].end, isScoped );
   }
   
@@ -40,13 +39,13 @@ export function parseComponent(fileContent:string, options:Paddable = { pad: "li
     customBlocks = normalizeCustomBlocks( customBlockMatches );
   }
 
-  const scriptContent = removeDeclarations( fileContent, {
+  const scriptContentOnly = removeDeclarations( fileContent, {
     template: templateMatches.length > 0,
     styles: styleMatches.length > 0,
     customBlock: customBlockMatches.length > 0,
   });
 
-  script = normalizeScripts( scriptContent );
+  script = normalizeScripts( scriptContentOnly );
 
   return {
     template,
