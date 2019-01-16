@@ -191,6 +191,18 @@ const styles = `
   </style>
 `;
 ```
+The opening and closing style tags can also be optional
+```ts
+/** @VueLiteralCompiler Styles */
+const styles = `
+  .p {
+    font-size: 2em;
+    text-align: center;
+  }
+`;
+```
+Optional Style Tags are global by default.
+
 ### Custom Blocks
 A custom block in a `.vue` file would look this:
 ```html
