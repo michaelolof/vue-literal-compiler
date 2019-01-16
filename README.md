@@ -426,7 +426,7 @@ Other examples of type safe lists:
 </ul>
 
 <div v-for="${ <any> (app._value, app._key, app._index) in app.object }">
-  ${ app.index }. ${ app.key }: ${ app.value }
+  ${ app._index }. ${ app._key }: ${ app._value }
 </div>
 ```
  
