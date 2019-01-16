@@ -28,6 +28,7 @@ A simple stand in replacement for the default vue-template-compiler that allows 
 - ### [API](#api)
 - ### [Painless Migration / Testing](#painless-migration-testing)
 - ### [Why `.lit.*` files?](#why-lit-files)
+- ### [Type Safe Bindings vs Type Safe Templates.](#type-bindings-vs-type-templates)
 
 
 ## <a name="installation">Installation</a>
@@ -265,5 +266,155 @@ At this point migrating your code base from `.vue` to `.lit.ts` or `.lit.js` is 
 While Vue Literal Compiler doesn't discriminate against file extension types (Whatever test case you put in your webpack config is what the compiler will use.) There are some reasons you might want to use .lit.* files over .vue.* files though.
 ### 1. Standards
 First Vue Literal Compiler doesn't care what file type you use. But standards are important.
-### 2. Interoperability with `.vue` files
+### 2. Interoperability with exisiting `.vue` files
 Using  `.vue.ts` or `.vue.js` with an existing code base of `.vue` files can cause unexpected errors due to name clashes. This is due to the way `vue-loader` and `ts-loader` work internally. To avoid this when working with an existing codebase of `.vue` files, just use a different file type aside from `.vue.ts` or `.vue.js`. 
+
+## <a name="type-bindings-vs-type-templates">Type Safe Bindings vs Type Safe Templates</a>
+With Fat Arrow Templates and Variable Encapsulations **your bindings are type safe**. This is a different approach from DSLs like JSX/TSX which promises typesafe templates. 
+
+
+With type safe bindings we can maintain the regular vue syntax we are used to (i.e `v-show` or `v-if` instead of `teniary`, `v-for` instead of `map(...)`, `@click` etc.) and still get complete type safety.
+
+**Basic Data Binding:**
+
+Normal Vue syntax:
+```
+<span>Message: {{ msg }}</span>
+```
+Type Safe Alternative:
+```
+<span>Message: ${ app.msg }</span>
+```
+\
+**Attribute Data Bindings**
+
+Normal Vue Syntax:
+```
+<div v-bind:id="dynamicId"></div>
+
+<button v-bind:disabled="isButtonDisabled">Button</button>
+```
+Type Safe Alternative:
+```
+<div v-bind:id="${ app.dynamicId }"></div>
+
+<button v-bind:disabled="${ app.isButtonDisabled }">Button</button>
+```
+\
+**Using JavaScript Expressions**
+
+Normal Vue Syntax:
+```html
+{{ number + 1 }}
+
+{{ ok ? 'YES' : 'NO' }}
+
+{{ message.split('').reverse().join('') }}
+
+<div v-bind:id="'list-' + id"></div>
+
+<form v-on:submit.prevent="onSubmit"> ... </form>
+
+<a @click="doSomething"> ... </a>
+```
+
+Type Safe Alternative:
+```ts
+${ app.number + 1 }
+
+${ app.ok ? 'YES' : 'NO' }
+
+${ app.message.split('').reverse().join('') }
+
+<div v-bind:id="${ 'list-' + app.id }"></div>
+
+<form v-on:submit.prevent="${ app.onSubmit }"> ... </form>
+
+<a @click="${ app.doSomething() }"> ... </a>
+```
+\
+**Class And Style Bindings**
+
+Normal Vue Syntax:
+```html
+<div v-bind:class="{ active: isActive, 'text-danger': hasError }"></div>
+
+<div v-bind:class="[ activeClass, errorClass ]"></div>
+
+<div v-bind:class="[ isActive ? activeClass : '', errorClass ]"></div>
+
+<div v-bind:class="[ { active: isActive }, errorClass ]"></div>
+
+<div v-bind:style="{ color: activeColor, fontSize: fontSize + 'px' }"></div>
+```
+Type Safe Alternative:
+```ts
+<div v-bind:class="${{ active: app.isActive, 'text-danger': app.hasError }}"></div>
+
+<div v-bind:class="${[ app.activeClass, app.errorClass ]}"></div>
+
+<div v-bind:class="${[ app.isActive ? app.activeClass : '', app.errorClass ]}"></div>
+
+<div v-bind:class="${[ { active: app.isActive }, app.errorClass ]}"></div>
+
+<div v-bind:style="${{ color: app.activeColor, fontSize: app.fontSize + 'px' }}"></div>
+```
+\
+**List Rendering**
+
+List Rendering are sort of an edge case when it comes to type safety due to the way they are declared. (`v-for`s in Vue are not exactly JavaScript compliant.)
+
+A typical Vue List would look like this:
+```html
+<ul id="example-1">
+  <li v-for="item in items">
+    {{ item.message }}
+  </li>
+</ul>
+```
+Following our normal convention, the Fat Arrow alternative should typically look like this:
+```ts
+<ul id="example-1">
+  <li v-for="${ app.item in app.items }">
+    ${ app.item.message }
+  </li>
+</ul>
+```
+Unfortunately this would throw a compile time error in TypeScript saying `app.item` is not found.
+
+To get around this error we need to do two things.
+
+First Create a Template Addon Interface
+```ts
+interface TemplateAddOn {
+  _item: typeof App.prototype.items[0]
+}
+``` 
+Then in the Fat Arrow Template:
+```ts
+const template = (app:App & TemplateAddOn) => `
+  <ul id="example-1">
+    <li v-for="${ <any> app._item in app.items }">
+      ${ app._item.message }
+    </li>
+  </ul>`
+```
+Now `app._item` is now recognized.\
+The underscore in `app._item` is just there to indicate to you that it is an addon and not part of your original component. (Feel free to use whatever you want.)\
+The cast to any however is necessary if `app._item` is not of type `number`, `string` or `symbol`.\
+
+**Only `<any>` casts are supported by the compiler.**
+
+Other examples of type safe lists:
+```ts
+<ul id="example-2">
+  <li v-for="${ <any> (app._item, app._index) in app._items }">
+    ${ app.parentMessage } - ${ app._index } - ${ app._item.message }
+  </li>
+</ul>
+
+<div v-for="${ <any> (app._value, app._key, app._index) in app.object }">
+  ${ app.index }. ${ app.key }: ${ app.value }
+</div>
+```
+ 
