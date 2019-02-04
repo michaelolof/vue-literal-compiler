@@ -1,6 +1,7 @@
 import { SFCBlock, SFCCustomBlock } from "@vue/component-compiler-utils/dist/parse";
 //@ts-ignore 
 import hyntax from "hyntax";
+import { split, first, last } from "../utils";
 
 
 export const regexp = {
@@ -30,6 +31,7 @@ export function matchJSDocTemplateDirective(fileContent:string, rgx:RegExp) {
   let matches:MatchedDeclaration[] = [], start = 0, end = 0;
   
   const regexpArr = rgx.exec( fileContent );
+  
   if( regexpArr === null ) return matches;
   const match = regexpArr[0];
   start = regexpArr.index;
@@ -38,9 +40,8 @@ export function matchJSDocTemplateDirective(fileContent:string, rgx:RegExp) {
 
   const assignmentStatement = regexpArr[ regexpArr.length - 2 ];
   if( templateIsFunctional( assignmentStatement ) ) {
-    const variableMatcher = /\${([^}]+:?)}/;      
-    const paramBlk = assignmentStatement.split("=>")[0].split("=")[1].split(":")[0].split("(");
-    const param = paramBlk[ paramBlk.length - 1 ].split(")")[0].trim();
+    const variableMatcher = /\${([^}]+:?)}/;
+    const param = getParameter( assignmentStatement );
     if( param.length === 0 ) {
       throw new Error(
         "Vue Literal Compiler Error:\n"+
@@ -64,7 +65,22 @@ export function matchJSDocTemplateDirective(fileContent:string, rgx:RegExp) {
 
   matches.push({ content, start, end });
   return matches;
-  //--------------------------------------------------------
+  //-------------------------------------------------------- 
+  function getParameter (assignmentStatement:string) {
+    // Read bottom to top.
+    return (
+      first(
+      split( ")" ) (
+      last(  
+      split( "(" ) (
+      first( 
+      split( ":" ) (
+      last(
+      split( "=" ) (
+      first( 
+      split( "=>" )( assignmentStatement )
+    )))))))))).trim()
+  }
 
   function templateIsFunctional(assignmentStatement:string) {
     return assignmentStatement.indexOf("=>") > -1
@@ -331,3 +347,5 @@ export function removeDeclarations(str:string, isPresent:DeclarationsArePresent 
   if( isPresent.customBlock ) str = str.replace( regexp.customBlock, "" );
   return str;
 }
+
+
