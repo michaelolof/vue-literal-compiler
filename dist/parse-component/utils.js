@@ -7,7 +7,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 var hyntax_1 = __importDefault(require("hyntax"));
 var utils_1 = require("../utils");
 exports.regexp = {
-    template: /\/\*([\s\*]+)?@VueLiteralCompiler([\s]+)?Template([\s]+)?\*\/([^`]+)?`[^`]+`([\s]+)?;?/,
+    template: /\/\*([\s\*]+)?@VueLiteralCompiler([\s]+)?Template([^`]+)?`[^`]+`([\s]+)?;?/,
     styles: /\/\*\*([\s\*]+)?@VueLiteralCompiler([\s]+)?Styles([\s\*]+)?\*\/([^`]+)?`[^`]+`([\s]+)?;?/g,
     customBlock: /\/\*([\s\*]+)?@VueLiteralCompiler([\s]+)?Custom Block([\s]+)?\*\/([^`]+)?`[^`]+`([\s]+)?;?/g,
     langAttr: /lang=[\'\"]([a-z]+:?)[\'\"]/,
@@ -60,8 +60,8 @@ function matchJSDocTemplateDirective(fileContent, rgx) {
     return matches;
     //-------------------------------------------------------- 
     function getParameter(assignmentStatement) {
-        // Read bottom to top.
-        return (utils_1.first(utils_1.split(")")(utils_1.last(utils_1.split("(")(utils_1.first(utils_1.split(":")(utils_1.last(utils_1.split("=")(utils_1.first(utils_1.split("=>")(assignmentStatement))))))))))).trim();
+        var pipeParameter = utils_1.pipe(utils_1.split("=>"), utils_1.first, utils_1.split("="), utils_1.last, utils_1.split(":"), utils_1.first, utils_1.split("("), utils_1.last, utils_1.split(")"), utils_1.first);
+        return pipeParameter(assignmentStatement);
     }
     function templateIsFunctional(assignmentStatement) {
         return assignmentStatement.indexOf("=>") > -1;

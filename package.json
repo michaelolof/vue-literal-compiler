@@ -4,7 +4,7 @@
   "description": "Compile Vue Template Literals into Render Functions at build time.",
   "main": "dist/index.js",
   "scripts": {
-    "start": "rm dist/* && tsc --watch",
+    "start": "tsc --watch",
     "test:unit": "mocha -r ts-node/register test/unit/**/*.test.ts --reporter=min --watch --watch-extensions ts",
     "start:unit": "concurrently -r --kill-others \"npm run start\" \"npm run test:unit\"",
     "test:e2e": "cd test/e2e && npm run start",

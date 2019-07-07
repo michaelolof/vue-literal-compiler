@@ -1,0 +1,9 @@
+{
+  "name": "test-ts",
+  "version": "0.1.0",
+  "private": true,
+  "devDependencies": {
+    "@vue/cli-plugin-typescript": "^3.5.0",
+    "@vue/cli-service": "^3.5.0"
+  }
+}

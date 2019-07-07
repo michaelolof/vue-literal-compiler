@@ -27,6 +27,59 @@ export function matchJSDocDirective(fileContent:string, rgx:RegExp) {
   return matches
 }
 
+
+export function resolveTemplateBindings( parameter :string, fatArrowBody :string ) {
+  const variableMatcher = /\${([^}]+:?)}/;
+  
+  const contentToken = hyntax.tokenize( fatArrowBody ).tokens as HyntaxToken[];
+  const variableTokens = fetchVariableTokens( contentToken, variableMatcher );
+  const dd = variableTokens.map( vtoken => resolveContent( vtoken, parameter, variableMatcher ) );
+  dd.map( d => fatArrowBody = replaceContentAtPosition( fatArrowBody, d.orignal, d.replaced ));
+
+  return fatArrowBody;
+  //-------------------------------------------------------------------
+  function fetchVariableTokens( tokens:HyntaxToken[], variableMatcher:RegExp ) {
+    const variableTokens:HyntaxToken[] = [];
+    for(let token of tokens ) {
+      switch( token.type ) {
+        case "token:text":
+          const cd = token.content.match( variableMatcher );
+          if( cd === null ) break;
+          variableTokens.push( token );
+          break;
+        case "token:attribute-value":
+          const cd2 = token.content.match( variableMatcher );
+          if( cd2 === null ) break;
+          variableTokens.push( token );
+          break;
+        default: break;
+      }
+    }
+    return variableTokens;
+  }
+
+  function resolveContent(token:HyntaxToken, param:string, variableMatcher:RegExp):ResolvedLiteral {
+    const replaced = token.content.replace( variableMatcher, (match, ...args ) => {
+      let declaration = args[ 0 ] as string;
+      // Remove the any <any> type cast.
+      declaration = declaration.replace("<any>", "" )
+      const paramCallRegx = new RegExp( param + "([\s]+)?.")
+      const resolvedDeclaration = declaration.split(" ").map( d => d.replace( paramCallRegx, "" ) ).join(" ");
+      if( token.type === "token:text" ) return `{{ ${resolvedDeclaration} }}`
+      else return resolvedDeclaration.trim();
+    });
+    return {
+      orignal: token,
+      replaced,
+    }
+  }
+
+  function replaceContentAtPosition(content:string, token:HyntaxToken, replaced:string) {
+    return content.replace( token.content, replaced );
+  }
+
+}
+
 export function matchJSDocTemplateDirective(fileContent:string, rgx:RegExp) {
   let matches:MatchedDeclaration[] = [], start = 0, end = 0;
   
@@ -45,14 +98,14 @@ export function matchJSDocTemplateDirective(fileContent:string, rgx:RegExp) {
     if( param.length === 0 ) {
       throw new Error(
         "Vue Literal Compiler Error:\n"+
-        "Functional Templates with no parameters (() => any) are not supported.\n" +
+        "Fat Arrow Templates with no parameters (() => any) are not supported.\n" +
         "Either pass a single parameter using the fat arrow syntax or use a simple assignment template.\n" + 
         "\nExamples of supported template signatures are:\n" +
-        "1. const template = `...`\n" +
-        "2. const template = app => `...`\n" +
-        "3. const template = (app) => `...`\n" +
-        "4. const template = (app:App) => `...`\n" +
-        "\n- A Functional template can only have one parameter which represents the instance of the Vue component.\n" +
+        "1. template`...`\n" +
+        "2. app => template`...`\n" +
+        "3. (app) => template`...`\n" +
+        "4. (app:App) => template`...`\n" +
+        "\n- Fat Arrow Templates can only have one parameter which represents the instance of the Vue component.\n" +
         "- Only Fat Arrow Syntax is supported for functional templates\n\n" 
       );
     }
@@ -126,71 +179,106 @@ export function matchJSDocTemplateDirective(fileContent:string, rgx:RegExp) {
   }
 }
 
-export function normalizeStyles(stylesWithTags:string, start:number, end:number ):NormalizedStyles {
-  let isScoped:true|undefined = undefined
-  
-  const stylesWithHeader = stylesWithTags.trimRight().split(/<\/([\s]+)?style([\s]+)?>/g).filter( v => v );
 
-  let startPositionOfEachStyleTag = start;
-  const styles = stylesWithHeader.map( s => { 
-    const block = normalizeStyle(s, startPositionOfEachStyleTag );
-    if( block.scoped ) isScoped = true;
-    startPositionOfEachStyleTag = block.end; // This tells the start index to begin at the end of the previous style index;
-    return block;
+export function normalizeStyle( styleWithHeader:string, start:number, end :number ):SFCBlock {
+
+  let content :string = "";
+  let attrs = {} as Record<string,any>;
+  let lang :string = "";
+  let scoped :true | undefined = undefined;
+  let styleHeader = "";
+
+  // Remove ending style tag to avoid match dupication.
+  styleWithHeader = styleWithHeader.trimRight().replace(/<\/([\s]+)?style([\s]+)?>/g, "" );
+
+  const styleHeaderRegexp = /<([^>]+)?>/g
+  content = styleWithHeader.replace( styleHeaderRegexp, (match, ...args) => {
+    styleHeader = args[ 0 ];
+    return "" 
   });
 
-  // For Optional Style Tags, update start and end position with originally matched positions.
-  if( styles.length === 1 && styles[0].start === 0 && styles[0].end === 0 ) {
-    styles[0].start = start;
-    styles[0].end = end;
+  // Check for scoped styles
+  if( styleHeader.indexOf( "scoped" ) > -1 ) {
+    scoped = true;
+    attrs.scoped = true;
   }
-  
-  
+  const styleMatch = styleHeader.match(regexp.langAttr);
+  if( styleMatch ) {
+    lang = styleMatch[ 1 ];
+    attrs.lang = lang
+  }
+
   return {
-    isScoped,
-    styles,
+    type: "style",
+    content,
+    scoped,
+    lang,
     start,
     end,
+    attrs,
+    src: undefined,
+    map: undefined,
+    module: undefined,
   }
-  //-------------------------------------------------------------------------------------
-  function normalizeStyle(styleWithHeader:string, start:number ):SFCBlock {
-    let lang:string|undefined = undefined;
-    let scoped:true|undefined = undefined;
-    const attrs:Record<any, any> = {};
+}
 
-    const styleHeaderRegexp = /<([^>]+)?>/g
-    let styleHeader = "", compStart = 0, compEnd = 0;
+export function _normalizeStyle(styleWithHeader:string, start:number ):SFCBlock {
 
-    const styleDeclaration = styleWithHeader.replace( styleHeaderRegexp, (match, ...args) => {
-      compStart = args[ 1 ] + start;
-      compEnd = compStart + styleWithHeader.length;
-      styleHeader = match;
-      return "" 
-    });
+  let lang:string|undefined = undefined;
+  let scoped:true|undefined = undefined;
+  const attrs:Record<any, any> = {};
 
-    // Check for scoped styles
-    if( styleHeader.indexOf( "scoped" ) > -1 ) {
-      scoped = true;
-      attrs.scoped = true;
-    }
-    const styleMatch = styleHeader.match(regexp.langAttr);
-    if( styleMatch ) {
-      lang = styleMatch[ 1 ];
-      attrs.lang = lang
-    }
 
-    return {
-      type: "style",
-      content: styleDeclaration,
-      scoped,
-      lang,
-      start: compStart,
-      end: compEnd,
-      attrs,
-      src: undefined,
-      map: undefined,
-      module: undefined,
-    }
+  const styleHeaderRegexp = /<([^>]+)?>/g
+  let styleHeader = "", compStart = 0, compEnd = 0;
+
+  const styleDeclaration = styleWithHeader.replace( styleHeaderRegexp, (match, ...args) => {
+    compStart = args[ 1 ] + start;
+    compEnd = compStart + styleWithHeader.length;
+    styleHeader = match;
+
+    return "" 
+  });
+
+  // Check for scoped styles
+  if( styleHeader.indexOf( "scoped" ) > -1 ) {
+    scoped = true;
+    attrs.scoped = true;
+  }
+  const styleMatch = styleHeader.match(regexp.langAttr);
+  if( styleMatch ) {
+    lang = styleMatch[ 1 ];
+    attrs.lang = lang
+  }
+
+  return {
+    type: "style",
+    content: styleDeclaration,
+    scoped,
+    lang,
+    start: compStart,
+    end: compEnd,
+    attrs,
+    src: undefined,
+    map: undefined,
+    module: undefined,
+  }
+  
+}
+
+interface NormalizeCustomTemplateOptions {
+  templateMarkup :string;
+  start :number;
+  end :number;
+  lang :string;
+  isScoped :true | undefined;
+}
+
+
+export function normalizeCustomTemplate({ templateMarkup, start, end, lang, isScoped } :NormalizeCustomTemplateOptions ) {
+  return {
+    type: "template",
+    // attribute :
   }
 }
 
