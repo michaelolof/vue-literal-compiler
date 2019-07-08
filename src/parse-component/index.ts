@@ -15,7 +15,7 @@ export interface Paddable {
 }
 
 
-export function parseComponent(fileContent:string, options:Paddable = { pad: "line"}):SFCDescriptor {
+export function parseComponentUsingComments(fileContent:string, options:Paddable = { pad: "line"}):SFCDescriptor {
   let isScoped:boolean|undefined = undefined;
   let styles:SFCBlock[] = []
   let template:SFCBlock|null = null;

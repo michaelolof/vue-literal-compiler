@@ -1,6 +1,6 @@
 //@ts-ignore
 import * as compiler from "vue-template-compiler";
-import { parseComponent as _parseComponent } from "./parse-component"
+import { parseComponentUsingComments as _parseComponent } from "./parse-component"
 import { parseComponent as __parseComponent } from "./new-parse-component"
 
 export const parseComponent = __parseComponent;

@@ -346,14 +346,11 @@ export function normalizeTemplate(templateMarkup:string, start:number, end:numbe
   }
 }
 
-export function normalizeCustomBlocks(customBlocksDeclartion:MatchedDeclaration[]) {
-  return customBlocksDeclartion.map( c => normalize( c ) );
-
-  function normalize(customBlock:MatchedDeclaration):SFCCustomBlock {
+export function normalizeCustomBlock({ content, start, end } :MatchedDeclaration ):SFCCustomBlock {
     let type = "";
     const attrs:Record<any, any> = {};
     const customBlockTypeRegex = /<(([\s]+)?[^>]+:?)>/
-    const headerless = customBlock.content.replace( customBlockTypeRegex, (match, ...args) => {
+    const headerless = content.replace( customBlockTypeRegex, (match, ...args) => {
       const inner = args[0] as string;
       type = inner.replace( regexp.langAttr, (_, ...args) => {
         attrs.lang = args[0]
@@ -363,19 +360,18 @@ export function normalizeCustomBlocks(customBlocksDeclartion:MatchedDeclaration[
     })
     
     const endRegexp = new RegExp("<\/([\s]+)?"+type.trim()+"([\s]+)?>");
-    const content = headerless.replace( endRegexp, "" );
+    const customBlockContent = headerless.replace( endRegexp, "" );
     return  {
-      content,
+      content: customBlockContent,
       attrs,
       type,
-      start: customBlock.start,
-      end: customBlock.end,
+      start,
+      end,
       map: undefined,
     }
-  }
 }
 
-export function normalizeScripts(modifiedFile:string):SFCBlock {
+export function normalizeScript(modifiedFile:string):SFCBlock {
   return {
     type: "script",
     content: modifiedFile,
@@ -423,16 +419,20 @@ interface ResolvedLiteral {
 }
 
 export interface DeclarationsArePresent {
-  template:boolean;
-  styles:boolean;
-  customBlock:boolean;
+  template: SFCBlock | null;
+  styles: SFCBlock[];
+  customBlocks: SFCCustomBlock[];
 }
 
-export function removeDeclarations(str:string, isPresent:DeclarationsArePresent ) {
-  if( isPresent.template ) str = str.replace( regexp.template, "" );
-  if( isPresent.styles ) str = str.replace( regexp.styles, "" );
-  if( isPresent.customBlock ) str = str.replace( regexp.customBlock, "" );
-  return str;
+export function removeDeclarations( fileContent:string, { template, styles, customBlocks } :DeclarationsArePresent ) {
+  let templateMatch, styleMatches :string[] = [], customBlockMatches :string[] = [];
+  if( template ) templateMatch = fileContent.substring( template.start, template.end )
+  if( styles.length > 0 ) styleMatches =  styles.map( style => fileContent.substring( style.start, style.end ) );
+  if( customBlocks.length > 0 ) customBlockMatches = customBlocks.map( custom => fileContent.substring( custom.start, custom.end ) );
+  
+  if( templateMatch ) fileContent = fileContent.replace( templateMatch, "" );
+  for( let style of styleMatches ) fileContent = fileContent.replace( style, "" );
+  for( let block of customBlockMatches ) fileContent = fileContent.replace( block, "" );
+
+  return fileContent;
 }
-
-

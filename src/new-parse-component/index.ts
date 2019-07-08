@@ -1,15 +1,8 @@
 import { SFCDescriptor, SFCBlock, SFCCustomBlock } from "@vue/component-compiler-utils/dist/parse";
-import { normalizeScripts } from "../parse-component/utils";
 import { createSourceFile, ScriptTarget, SyntaxKind, SourceFile, Node, isTaggedTemplateExpression, TaggedTemplateExpression, LeftHandSideExpression, isImportDeclaration, ImportDeclaration, isArrowFunction, ArrowFunction } from "typescript";
-import { resolveTemplateBindings, normalizeTemplate, normalizeStyle } from "./utils";
+import { resolveTemplateBindings, normalizeTemplate, normalizeStyle, normalizeCustomBlock, removeDeclarations, normalizeScript } from "./utils";
 
 const moduleName = "vue-literal-compiler/tags";
-
-const customTemplateTags = [
-  "html",
-  "pug",
-  "handlebars"
-];
 
 
 export async function parseComponent(fileContent :string, options :Paddable = { pad: "line"}) :Promise<SFCDescriptor> {
@@ -21,12 +14,12 @@ export async function parseComponent(fileContent :string, options :Paddable = { 
 
 
   const tokens = await tokenizeContent( fileContent );
-  if( tokens === undefined ) return { template, script: normalizeScripts( fileContent ), styles, customBlocks };
+  if( tokens === undefined ) return { template, script: normalizeScript( fileContent ), styles, customBlocks };
 
 
   // Look for import definitions using this library.
   const importToken = tokens.find( token => token instanceof ImportDefinition && token.module === moduleName ) as ImportDefinition | undefined;
-  if( importToken === undefined ) return { template, script: normalizeScripts( fileContent ), styles, customBlocks };
+  if( importToken === undefined ) return { template, script: normalizeScript( fileContent ), styles, customBlocks };
   // Extract literal and fatarrow tokens.
   const fatArrowTokens = tokens.filter( t => t instanceof FatArrowLiteral ) as FatArrowLiteral[];
   const literalTokens = tokens.filter( t => t instanceof TaggedLiteral ) as TaggedLiteral[];
@@ -41,10 +34,22 @@ export async function parseComponent(fileContent :string, options :Paddable = { 
   // Handle Template Tags.
   template = resolveTemplateLiteralTag({ importToken, fatArrowTokens, literalTokens, isScoped });
 
+
+  // Handle Custom Blocks
+  customBlocks = resolveCustomBlocks({ importToken, literalTokens });
+
+
+  // Remove all template, styles and custom blocks
+  const scriptsOnly = removeDeclarations( fileContent, {
+    template,
+    styles,
+    customBlocks
+  });
+
+  // Handle Script.
+  script = normalizeScript( scriptsOnly )
+
   
-
- 
-
   return {
     template,
     script,
@@ -54,6 +59,25 @@ export async function parseComponent(fileContent :string, options :Paddable = { 
 
 }
 
+
+function resolveCustomBlocks({ importToken, literalTokens } :CustomBlockOptions ) {
+  let customBlocks :SFCCustomBlock[] = [];
+
+  const customBlockImport = importToken.imports.find( imp => imp.name === "customBlock" );
+
+  if( customBlockImport === undefined ) return customBlocks;
+
+  const tag = customBlockImport.alias || customBlockImport.name;
+
+  const customBlockTokens = literalTokens.filter( lit => lit.tag === tag );
+
+  for( let { body, start, end } of customBlockTokens ) {
+    const normalizedCustomBlock = normalizeCustomBlock({ content: body, start, end });
+    customBlocks.push( normalizedCustomBlock );
+  }
+
+  return customBlocks;
+}
 
 function resolveStyleLiteralTag({ importToken, literalTokens } :StyleLiteralTagsOptions ) :{ isScoped :true | undefined, styles :SFCBlock[] } {
   let isScoped :true | undefined = undefined;
@@ -195,6 +219,8 @@ interface StyleLiteralTagsOptions {
   literalTokens :TaggedLiteral[];  
 }
 
+interface CustomBlockOptions extends StyleLiteralTagsOptions {}
+
 
 
 
@@ -328,8 +354,7 @@ export class FatArrowLiteral {
   parameters: string[] = [];
   isFunctional = false;
 
-  constructor( node :HasTag & ArrowFunction, nextNode :Node,  fileContent :string ) {    
-    
+  constructor( node :HasTag & ArrowFunction, fileContent :string ) {    
     this.start = node.pos;
     this.end = node.end;
     //@ts-ignore

@@ -1,8 +1,8 @@
 import { Component, Vue } from "vue-property-decorator";
-import { html } from "../utils";
+//@ts-ignore
+import { template, style } from "vue-template-compiler/tags"
 
-/** @VueLiteralCompiler Template */ 
-const template = (app:App & TemplateAddOns) => html`
+(app:App & TemplateAddOns) => template`
   <template>
     <div class="app-inner">
       <h1 @click="${ app.move() }">Hello ${ app.name }</h1>
@@ -48,8 +48,7 @@ interface TemplateAddOns {
 }
 
 
-/** @VueLiteralCompiler Styles */
-const styles =  html`
+style`
   .app-inner {
     padding: 40px;
     background-color: gold;
