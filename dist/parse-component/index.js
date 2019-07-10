@@ -1,7 +1,7 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 var utils_1 = require("./utils");
-function parseComponent(fileContent, options) {
+function parseComponentUsingComments(fileContent, options) {
     if (options === void 0) { options = { pad: "line" }; }
     var isScoped = undefined;
     var styles = [];
@@ -35,4 +35,4 @@ function parseComponent(fileContent, options) {
         customBlocks: customBlocks,
     };
 }
-exports.parseComponent = parseComponent;
+exports.parseComponentUsingComments = parseComponentUsingComments;

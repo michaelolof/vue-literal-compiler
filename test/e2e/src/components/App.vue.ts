@@ -1,13 +1,9 @@
 import { Component, Vue } from "vue-property-decorator";
-//@ts-ignore
-import { template, style } from "vue-template-compiler/tags"
+import { template, style } from "../utils"
 
 (app:App & TemplateAddOns) => template`
   <template>
     <div class="app-inner">
-      <h1 @click="${ app.move() }">Hello ${ app.name }</h1>
-      <h3>I have a very special message to deliver. {{ name }}</h3>
-      <div :style="${ app.styles }"> Name</div>
       <div v-bind:style="${[ { active: app._item }, app.name ]}"></div>
       <ul v-for="${ <any> app._item in app.items }" :key="${ app._item.id }">
         <li>
@@ -21,8 +17,7 @@ import { template, style } from "vue-template-compiler/tags"
 `;
 
 
-@Component
-export default class App extends Vue {
+@Component export default class App extends Vue {
   styles = {
     color: "blue",
     backgroundColor: "green",
@@ -49,6 +44,9 @@ interface TemplateAddOns {
 
 
 style`
+  body {
+    background-color: blue;
+  }
   .app-inner {
     padding: 40px;
     background-color: gold;
