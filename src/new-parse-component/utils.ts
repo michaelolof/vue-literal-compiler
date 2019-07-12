@@ -60,7 +60,7 @@ export function resolveTemplateBindings( parameter :string, fatArrowBody :string
   
   const contentToken = hyntax.tokenize( fatArrowBody ).tokens as HyntaxToken[];
   const variableTokens = fetchVariableTokens( contentToken, variableMatcher );
-  const dd = variableTokens.map( vtoken => resolveContent( vtoken, parameter, variableMatcher ) );
+  const dd = variableTokens.map( vtoken => resolveContent( vtoken, parameter ) );
   dd.map( d => fatArrowBody = replaceContentAtPosition( fatArrowBody, d.orignal, d.replaced ));
 
   return fatArrowBody;
@@ -85,33 +85,28 @@ export function resolveTemplateBindings( parameter :string, fatArrowBody :string
     return variableTokens;
   }
 
-  function resolveContent(token:HyntaxToken, param:string, variableMatcher:RegExp):ResolvedLiteral {
+  function resolveContent(token:HyntaxToken, param:string ):ResolvedLiteral {    
     
-    // Replace ${
     let replaced = token.content;
     const openLiteralCurlyBracesPosition = token.content.indexOf("${");
     if( openLiteralCurlyBracesPosition > -1 ) {
       
-      const closingLiteralCurlyBracesPosition = replaced.lastIndexOf("} ");
-      
       if( token.type === "token:text" ) {
         replaced = replaceAtPosition( replaced, openLiteralCurlyBracesPosition, "{" );
-        replaced = replaceAtPosition( replaced, openLiteralCurlyBracesPosition, "{" );  
+        const closingLiteralCurlyBracesPosition = replaced.lastIndexOf("}");
         replaced = replaceAtPosition( replaced, closingLiteralCurlyBracesPosition, "}}" ); 
       } 
       else {
         replaced = replaceAtPosition( replaced, openLiteralCurlyBracesPosition, "" );
         replaced = replaceAtPosition( replaced, openLiteralCurlyBracesPosition, "" );
+        const closingLiteralCurlyBracesPosition = replaced.lastIndexOf("}");
         replaced = replaceAtPosition( replaced, closingLiteralCurlyBracesPosition, "" ); 
       }
-      
-      
+            
       replaced = replaced.replace("<any>", "" )
       const paramCallRegx = new RegExp( param + "([\s]+)?.")
-      const resolvedDeclaration = replaced.split(" ").map( d => d.replace( paramCallRegx, "" ) ).join(" ");
+      replaced = replaced.split(" ").map( d => d.replace( paramCallRegx, "" ) ).join(" ");
     
-      // if( token.type === "token:text" ) replaced = `{{ ${resolvedDeclaration} }}`
-      // else replaced = resolvedDeclaration.trim();
     }
     
     return {

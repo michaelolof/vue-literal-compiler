@@ -11,12 +11,9 @@ function parseComponent(fileContent, options) {
     var customBlocks = [];
     var script = null;
     var tokens = utils_1.tokenizeContent(fileContent);
-    // If there are no import, literal or fat arrow tokens parse using comments.
     if (tokens === undefined)
         return index_1.parseComponentUsingComments(fileContent, options);
-    // Look for import definitions using this library.
     var importToken = tokens.find(function (token) { return token instanceof utils_1.ImportDefinition && token.module === moduleName; });
-    // If there are no import tokens using vue-literal-compiler default to using comments.
     if (importToken === undefined)
         return index_1.parseComponentUsingComments(fileContent, options);
     // Extract literal and fatarrow tokens.
@@ -30,6 +27,7 @@ function parseComponent(fileContent, options) {
     template = resolveTemplateLiteralTag({ importToken: importToken, fatArrowTokens: fatArrowTokens, literalTokens: literalTokens, isScoped: isScoped });
     // Handle Custom Blocks
     customBlocks = resolveCustomBlocks({ importToken: importToken, literalTokens: literalTokens });
+    console.log(template);
     // Remove all template, styles and custom blocks
     var scriptsOnly = utils_1.removeDeclarations(fileContent, {
         template: template,
@@ -38,7 +36,6 @@ function parseComponent(fileContent, options) {
     });
     // Handle Script.
     script = utils_1.normalizeScript(scriptsOnly);
-    console.log(template);
     return {
         template: template,
         script: script,

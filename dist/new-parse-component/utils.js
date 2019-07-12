@@ -63,7 +63,7 @@ function resolveTemplateBindings(parameter, fatArrowBody) {
     var variableMatcher = /\${([^}]+:?)}/;
     var contentToken = hyntax_1.default.tokenize(fatArrowBody).tokens;
     var variableTokens = fetchVariableTokens(contentToken, variableMatcher);
-    var dd = variableTokens.map(function (vtoken) { return resolveContent(vtoken, parameter, variableMatcher); });
+    var dd = variableTokens.map(function (vtoken) { return resolveContent(vtoken, parameter); });
     dd.map(function (d) { return fatArrowBody = replaceContentAtPosition(fatArrowBody, d.orignal, d.replaced); });
     return fatArrowBody;
     //-------------------------------------------------------------------
@@ -89,27 +89,24 @@ function resolveTemplateBindings(parameter, fatArrowBody) {
         }
         return variableTokens;
     }
-    function resolveContent(token, param, variableMatcher) {
-        // Replace ${
+    function resolveContent(token, param) {
         var replaced = token.content;
         var openLiteralCurlyBracesPosition = token.content.indexOf("${");
         if (openLiteralCurlyBracesPosition > -1) {
-            var closingLiteralCurlyBracesPosition = replaced.lastIndexOf("} ");
             if (token.type === "token:text") {
                 replaced = replaceAtPosition(replaced, openLiteralCurlyBracesPosition, "{");
-                replaced = replaceAtPosition(replaced, openLiteralCurlyBracesPosition, "{");
+                var closingLiteralCurlyBracesPosition = replaced.lastIndexOf("}");
                 replaced = replaceAtPosition(replaced, closingLiteralCurlyBracesPosition, "}}");
             }
             else {
                 replaced = replaceAtPosition(replaced, openLiteralCurlyBracesPosition, "");
                 replaced = replaceAtPosition(replaced, openLiteralCurlyBracesPosition, "");
+                var closingLiteralCurlyBracesPosition = replaced.lastIndexOf("}");
                 replaced = replaceAtPosition(replaced, closingLiteralCurlyBracesPosition, "");
             }
             replaced = replaced.replace("<any>", "");
             var paramCallRegx_1 = new RegExp(param + "([\s]+)?.");
-            var resolvedDeclaration = replaced.split(" ").map(function (d) { return d.replace(paramCallRegx_1, ""); }).join(" ");
-            // if( token.type === "token:text" ) replaced = `{{ ${resolvedDeclaration} }}`
-            // else replaced = resolvedDeclaration.trim();
+            replaced = replaced.split(" ").map(function (d) { return d.replace(paramCallRegx_1, ""); }).join(" ");
         }
         return {
             orignal: token,

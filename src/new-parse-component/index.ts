@@ -2,8 +2,7 @@ import { SFCDescriptor, SFCBlock, SFCCustomBlock } from "@vue/component-compiler
 import { tokenizeContent, resolveTemplateBindings, normalizeTemplate, normalizeStyle, normalizeCustomBlock, removeDeclarations, normalizeScript, ImportDefinition, FatArrowLiteral, TaggedLiteral } from "./utils";
 import { parseComponentUsingComments } from "../parse-component/index";
 
-// const moduleName = "vue-literal-compiler/tags";
-const moduleName = "../utils";
+const moduleName = "vue-literal-compiler/tags";
 
 export function parseComponent(fileContent :string, options :Paddable = { pad: "line"}) :SFCDescriptor {
 
@@ -14,13 +13,10 @@ export function parseComponent(fileContent :string, options :Paddable = { pad: "
 
   const tokens = tokenizeContent( fileContent );
 
-  // If there are no import, literal or fat arrow tokens parse using comments.
   if( tokens === undefined ) return parseComponentUsingComments( fileContent, options );
 
-  // Look for import definitions using this library.
   const importToken = tokens.find( token => token instanceof ImportDefinition && token.module === moduleName ) as ImportDefinition | undefined;
 
-  // If there are no import tokens using vue-literal-compiler default to using comments.
   if( importToken === undefined ) return parseComponentUsingComments( fileContent, options );
 
   // Extract literal and fatarrow tokens.
@@ -38,6 +34,8 @@ export function parseComponent(fileContent :string, options :Paddable = { pad: "
   // Handle Custom Blocks
   customBlocks = resolveCustomBlocks({ importToken, literalTokens });
 
+  console.log( template );
+
   // Remove all template, styles and custom blocks
   const scriptsOnly = removeDeclarations( fileContent, {
     template,
@@ -47,8 +45,6 @@ export function parseComponent(fileContent :string, options :Paddable = { pad: "
 
   // Handle Script.
   script = normalizeScript( scriptsOnly )
-
-  console.log( template );
 
   return {
     template,

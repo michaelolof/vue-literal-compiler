@@ -58,7 +58,7 @@ export function matchJSDocTemplateDirective(fileContent:string, rgx:RegExp) {
     }
     const contentToken = hyntax.tokenize( content ).tokens as HyntaxToken[];
     const variableTokens = fetchVariableTokens( contentToken, variableMatcher );
-    const dd = variableTokens.map( vtoken => resolveContent( vtoken, param, variableMatcher ) );
+    const dd = variableTokens.map( vtoken => resolveContent( vtoken, param ) );
     dd.map( d => content = replaceContentAtPosition( content, d.orignal, d.replaced ));
   }
 
@@ -109,20 +109,38 @@ export function matchJSDocTemplateDirective(fileContent:string, rgx:RegExp) {
     return variableTokens;
   }
 
-  function resolveContent(token:HyntaxToken, param:string, variableMatcher:RegExp):ResolvedLiteral {
-    const replaced = token.content.replace( variableMatcher, (match, ...args ) => {
-      let declaration = args[ 0 ] as string;
-      // Remove the any <any> type cast.
-      declaration = declaration.replace("<any>", "" )
+  function resolveContent(token:HyntaxToken, param:string ):ResolvedLiteral {    
+    
+    let replaced = token.content;
+    const openLiteralCurlyBracesPosition = token.content.indexOf("${");
+    if( openLiteralCurlyBracesPosition > -1 ) {
+      
+      if( token.type === "token:text" ) {
+        replaced = replaceAtPosition( replaced, openLiteralCurlyBracesPosition, "{" );
+        const closingLiteralCurlyBracesPosition = replaced.lastIndexOf("}");
+        replaced = replaceAtPosition( replaced, closingLiteralCurlyBracesPosition, "}}" ); 
+      } 
+      else {
+        replaced = replaceAtPosition( replaced, openLiteralCurlyBracesPosition, "" );
+        replaced = replaceAtPosition( replaced, openLiteralCurlyBracesPosition, "" );
+        const closingLiteralCurlyBracesPosition = replaced.lastIndexOf("}");
+        replaced = replaceAtPosition( replaced, closingLiteralCurlyBracesPosition, "" ); 
+      }
+            
+      replaced = replaced.replace("<any>", "" )
       const paramCallRegx = new RegExp( param + "([\s]+)?.")
-      const resolvedDeclaration = declaration.split(" ").map( d => d.replace( paramCallRegx, "" ) ).join(" ");
-      if( token.type === "token:text" ) return `{{ ${resolvedDeclaration} }}`
-      else return resolvedDeclaration.trim();
-    });
+      replaced = replaced.split(" ").map( d => d.replace( paramCallRegx, "" ) ).join(" ");
+    
+    }
+    
     return {
       orignal: token,
       replaced,
     }
+  }
+
+  function replaceAtPosition(str :string, index :number, replace :string) {
+    return str.substring(0, index) + replace + str.substring(index + 1);
   }
 }
 

@@ -5,7 +5,7 @@ import { template, style } from "../utils"
   <template>
     <div class="app-inner">
       <div v-bind:style="${[ { active: app._item }, app.name ]}"></div>
-      <ul v-for="${ <any> app._item in app.items }" :key="${ app._item.id }">
+      <ul v-for="${<any> (app._item, app._index) in app.items }" :key="${ app._item.id }">
         <li>
           No: ${ app._index + 1 }
           Name: <span><b> ${ app._item.name }</b></span>
